@@ -18,7 +18,9 @@ from ..ast.nodes import (
     ClassDefinition,
     Comparison,
     Complex,
+    ComprehensionClause,
     Continue,
+    DictComprehension,
     DictLiteral,
     ElifClause,
     ExceptHandler,
@@ -30,18 +32,23 @@ from ..ast.nodes import (
     FromImport,
     FunctionCall,
     FunctionDefinition,
+    GeneratorExpression,
     Identifier,
     If,
     Import,
     Indexing,
     Integer,
     JoinedStr,
+    LambdaExpression,
+    ListComprehension,
     ListLiteral,
     NoneLiteral,
     Pass,
     Program,
     Raise,
     Return,
+    SetComprehension,
+    SetLiteral,
     Slice,
     Statement,
     String,
@@ -51,6 +58,8 @@ from ..ast.nodes import (
     While,
     With,
     WithItem,
+    Yield,
+    YieldFrom,
 )
 from ..exceptions import HinglishCompilerError
 from ..keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry
@@ -178,17 +187,27 @@ class HinglishCompiler:
             return lines
 
         if isinstance(stmt, FunctionDefinition):
+            lines = []
+            if stmt.decorators:
+                for dec in stmt.decorators:
+                    dec_hin = dec.start_pos.line if dec.start_pos else hin_line
+                    lines.append((f"{indent}@{self.compile_expression(dec)}", dec_hin))
             params_str = ", ".join(stmt.params)
-            lines = [(f"{indent}def {stmt.name}({params_str}):", hin_line)]
+            lines.append((f"{indent}def {stmt.name}({params_str}):", hin_line))
             lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
             return lines
 
         if isinstance(stmt, ClassDefinition):
+            lines = []
+            if stmt.decorators:
+                for dec in stmt.decorators:
+                    dec_hin = dec.start_pos.line if dec.start_pos else hin_line
+                    lines.append((f"{indent}@{self.compile_expression(dec)}", dec_hin))
             bases_str = ""
             if stmt.bases:
                 bases_compiled = [self.compile_expression(b) for b in stmt.bases]
                 bases_str = f"({', '.join(bases_compiled)})"
-            lines = [(f"{indent}class {stmt.name}{bases_str}:", hin_line)]
+            lines.append((f"{indent}class {stmt.name}{bases_str}:", hin_line))
             lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
             return lines
 
@@ -267,6 +286,16 @@ class HinglishCompiler:
                     names_parts.append(name)
             return [(f"{indent}from {stmt.module} import {', '.join(names_parts)}", hin_line)]
 
+        if isinstance(stmt, Yield):
+            if stmt.value is not None:
+                val_code = self.compile_expression(stmt.value)
+                return [(f"{indent}yield {val_code}", hin_line)]
+            return [(f"{indent}yield", hin_line)]
+
+        if isinstance(stmt, YieldFrom):
+            val_code = self.compile_expression(stmt.value)
+            return [(f"{indent}yield from {val_code}", hin_line)]
+
         line = stmt.start_pos.line if stmt.start_pos else None
         col = stmt.start_pos.column if stmt.start_pos else None
         raise HinglishCompilerError(
@@ -314,6 +343,18 @@ class HinglishCompiler:
         """Compiles a list of statements forming a block body."""
         lines = [line_str for line_str, _ in self._compile_body_lines(body, indent_level, 1)]
         return "\n".join(lines)
+
+    def _compile_comprehension_clauses(self, clauses: List[ComprehensionClause]) -> str:
+        """Compiles comprehension clauses ('for ... in ... if ...')."""
+        parts: List[str] = []
+        for clause in clauses:
+            target_str = self.compile_expression(clause.target)
+            iter_str = self.compile_expression(clause.iterable)
+            parts.append(f"for {target_str} in {iter_str}")
+            for cond in clause.conditions:
+                cond_str = self.compile_expression(cond)
+                parts.append(f"if {cond_str}")
+        return " ".join(parts)
 
     # -------------------------------------------------------------------------
     # Expression Compilation with Precedence Handling
@@ -394,6 +435,56 @@ class HinglishCompiler:
                 return f"({self.compile_expression(expr.elements[0])},)"
             elements = [self.compile_expression(e) for e in expr.elements]
             return f"({', '.join(elements)})"
+
+        if isinstance(expr, SetLiteral):
+            elements = [self.compile_expression(e) for e in expr.elements]
+            return f"{{{', '.join(elements)}}}"
+
+        if isinstance(expr, ListComprehension):
+            elt_str = self.compile_expression(expr.element)
+            clauses_str = self._compile_comprehension_clauses(expr.clauses)
+            return f"[{elt_str} {clauses_str}]"
+
+        if isinstance(expr, DictComprehension):
+            key_str = self.compile_expression(expr.key)
+            val_str = self.compile_expression(expr.value)
+            clauses_str = self._compile_comprehension_clauses(expr.clauses)
+            return f"{{{key_str}: {val_str} {clauses_str}}}"
+
+        if isinstance(expr, SetComprehension):
+            elt_str = self.compile_expression(expr.element)
+            clauses_str = self._compile_comprehension_clauses(expr.clauses)
+            return f"{{{elt_str} {clauses_str}}}"
+
+        if isinstance(expr, GeneratorExpression):
+            elt_str = self.compile_expression(expr.element)
+            clauses_str = self._compile_comprehension_clauses(expr.clauses)
+            return f"({elt_str} {clauses_str})"
+
+        if isinstance(expr, LambdaExpression):
+            params_str = ", ".join(expr.params)
+            body_str = self.compile_expression(expr.body)
+            res = f"lambda {params_str}: {body_str}" if params_str else f"lambda: {body_str}"
+            if parent_prec > 0:
+                return f"({res})"
+            return res
+
+        if isinstance(expr, Yield):
+            if expr.value is not None:
+                val_str = self.compile_expression(expr.value)
+                res = f"yield {val_str}"
+            else:
+                res = "yield"
+            if parent_prec > 0:
+                return f"({res})"
+            return res
+
+        if isinstance(expr, YieldFrom):
+            val_str = self.compile_expression(expr.value)
+            res = f"yield from {val_str}"
+            if parent_prec > 0:
+                return f"({res})"
+            return res
 
         # 3. Binary Operations
         if isinstance(expr, BinaryOperation):

@@ -53,9 +53,9 @@ class HinglishREPL:
             self.buffer.append(line)
             return None
 
-        # Check if line initiates a block (ends with ':')
+        # Check if line initiates a block (ends with ':' or starts with '@')
         stripped = line.strip()
-        if stripped.endswith(":"):
+        if stripped.endswith(":") or stripped.startswith("@"):
             self.in_block = True
             self.buffer.append(line)
             return None

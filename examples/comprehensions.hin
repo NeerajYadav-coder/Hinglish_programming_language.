@@ -1,0 +1,27 @@
+# Hinglish Comprehensions Example: List, Dict, Set & Generator Comprehensions
+
+sankhyaye = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+# 1. List comprehension with condition
+sam_varg = [x * x har x mein sankhyaye agar x % 2 == 0]
+dikhao(f"Even squares: {sam_varg}")
+
+# 2. Nested / multi-loop list comprehension
+jodiyan = [f"{ch}-{ank}" har ch mein ["A", "B"] har ank mein [1, 2]]
+dikhao(f"Pairs: {jodiyan}")
+
+# 3. Dict comprehension
+ghana_kosh = {x: x * x * x har x mein [1, 2, 3, 4, 5]}
+dikhao(f"Cube dictionary: {ghana_kosh}")
+
+# 4. Set comprehension
+vishesh_shesh = {x % 4 har x mein sankhyaye}
+dikhao(f"Unique mod 4: {vishesh_shesh}")
+
+# 5. Set literal
+vishesh_set = {10, 20, 30, 20, 10}
+dikhao(f"Set literal: {vishesh_set}")
+
+# 6. Generator expression with multiple conditions
+dhara = (x * 10 har x mein sankhyaye agar x > 3 agar x < 8)
+dikhao(f"Generator evaluated to list: {list(dhara)}")

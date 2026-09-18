@@ -1,0 +1,59 @@
+# Hinglish Decorators Example: Function, Method, Class & Builtin Decorators
+
+# 1. Custom function decorator
+kaam log_karo(fn):
+    kaam wrapper(x, y):
+        dikhao(f"[LOG] Calling function with args: {x}, {y}")
+        natija = fn(x, y)
+        dikhao(f"[LOG] Result is: {natija}")
+        wapas natija
+    wapas wrapper
+
+# 2. Decorator factory with arguments
+kaam tag_banaye(tag_naam):
+    kaam decorator(fn):
+        kaam wrapper(naam):
+            antim = fn(naam)
+            wapas f"<{tag_naam}>{antim}</{tag_naam}>"
+        wapas wrapper
+    wapas decorator
+
+# 3. Class decorator
+kaam varg_sajawat(cls):
+    cls.sanshodhan = "Hinglish v2.0"
+    wapas cls
+
+# Applying custom function decorator
+@log_karo
+kaam jod(a, b):
+    wapas a + b
+
+kul = jod(15, 25)
+dikhao(f"Final jod: {kul}")
+
+# Applying chained decorators
+@tag_banaye("div")
+@tag_banaye("b")
+kaam abhivadan(vyakti):
+    wapas f"Namaste, {vyakti}!"
+
+dikhao(abhivadan("Neeraj"))
+
+# Applying class decorator and method decorators
+@varg_sajawat
+varg Gola:
+    kaam __init__(self, trijya):
+        self._trijya = trijya
+
+    @property
+    kaam kshetraphal(self):
+        wapas 3.14159 * self._trijya * self._trijya
+
+    @staticmethod
+    kaam niyam():
+        wapas "Area = pi * r^2"
+
+g = Gola(7)
+dikhao(f"Gola kshetraphal: {g.kshetraphal:.2f}")
+dikhao(f"Niyam: {Gola.niyam()}")
+dikhao(f"Class version: {Gola.sanshodhan}")

@@ -102,6 +102,7 @@ class FunctionDefinition(Statement):
     name: str = ""
     params: List[str] = field(default_factory=list)
     body: List[Statement] = field(default_factory=list)
+    decorators: List[Expression] = field(default_factory=list)
 
 
 @dataclass
@@ -151,6 +152,7 @@ class ClassDefinition(Statement):
     name: str = ""
     bases: List[Expression] = field(default_factory=list)
     body: List[Statement] = field(default_factory=list)
+    decorators: List[Expression] = field(default_factory=list)
 
 
 @dataclass
@@ -354,3 +356,80 @@ class Slice(Expression):
     lower: Optional[Expression] = None
     upper: Optional[Expression] = None
     step: Optional[Expression] = None
+
+
+# -----------------------------------------------------------------------------
+# Comprehensions, Lambda & Generator AST Nodes (Step 7)
+# -----------------------------------------------------------------------------
+
+
+@dataclass
+class ComprehensionClause(ASTNode):
+    """A 'for ... in ... [if ...]*' clause in a comprehension."""
+
+    target: Expression = field(default_factory=Expression)
+    iterable: Expression = field(default_factory=Expression)
+    conditions: List[Expression] = field(default_factory=list)
+
+
+@dataclass
+class ListComprehension(Expression):
+    """List comprehension: [elt for ... in ... if ...]"""
+
+    element: Expression = field(default_factory=Expression)
+    clauses: List[ComprehensionClause] = field(default_factory=list)
+
+
+@dataclass
+class DictComprehension(Expression):
+    """Dict comprehension: {key: value for ... in ... if ...]"""
+
+    key: Expression = field(default_factory=Expression)
+    value: Expression = field(default_factory=Expression)
+    clauses: List[ComprehensionClause] = field(default_factory=list)
+
+
+@dataclass
+class SetComprehension(Expression):
+    """Set comprehension: {elt for ... in ... if ...]"""
+
+    element: Expression = field(default_factory=Expression)
+    clauses: List[ComprehensionClause] = field(default_factory=list)
+
+
+@dataclass
+class GeneratorExpression(Expression):
+    """Generator expression: (elt for ... in ... if ...)"""
+
+    element: Expression = field(default_factory=Expression)
+    clauses: List[ComprehensionClause] = field(default_factory=list)
+
+
+@dataclass
+class SetLiteral(Expression):
+    """Set literal {elem1, elem2, ...}."""
+
+    elements: List[Expression] = field(default_factory=list)
+
+
+@dataclass
+class LambdaExpression(Expression):
+    """Anonymous lambda function: sookshm [<params>]: <body>"""
+
+    params: List[str] = field(default_factory=list)
+    body: Expression = field(default_factory=Expression)
+
+
+@dataclass
+class Yield(Expression):
+    """Yield expression or statement: upaj [<value>]"""
+
+    value: Optional[Expression] = None
+
+
+@dataclass
+class YieldFrom(Expression):
+    """Yield from expression or statement: upaj se <value>"""
+
+    value: Expression = field(default_factory=Expression)
+

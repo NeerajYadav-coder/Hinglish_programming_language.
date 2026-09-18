@@ -17,7 +17,9 @@ from ..ast.nodes import (
     ClassDefinition,
     Comparison,
     Complex,
+    ComprehensionClause,
     Continue,
+    DictComprehension,
     DictLiteral,
     ElifClause,
     ExceptHandler,
@@ -29,18 +31,23 @@ from ..ast.nodes import (
     FromImport,
     FunctionCall,
     FunctionDefinition,
+    GeneratorExpression,
     Identifier,
     If,
     Import,
     Indexing,
     Integer,
     JoinedStr,
+    LambdaExpression,
+    ListComprehension,
     ListLiteral,
     NoneLiteral,
     Pass,
     Program,
     Raise,
     Return,
+    SetComprehension,
+    SetLiteral,
     Slice,
     Statement,
     String,
@@ -50,6 +57,8 @@ from ..ast.nodes import (
     While,
     With,
     WithItem,
+    Yield,
+    YieldFrom,
 )
 from ..exceptions import HinglishSyntaxError
 from ..keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry
@@ -213,6 +222,10 @@ class HinglishParser:
             return self.parse_raise()
         if py_kw == "with":
             return self.parse_with()
+        if tok.type == TokenType.AT:
+            return self.parse_decorated_definition()
+        if py_kw == "yield":
+            return self.parse_yield_statement()
 
         # Expression or Assignment
         return self.parse_assignment_or_expression_statement()
@@ -592,6 +605,115 @@ class HinglishParser:
         end_pos = body[-1].end_pos if body else start_pos
         return With(items=items, body=body, start_pos=start_pos, end_pos=end_pos)
 
+    def parse_decorated_definition(self) -> Statement:
+        """Parses @decorator lines followed by a function or class definition."""
+        decorators: List[Expression] = []
+        start_pos = self.peek().start_pos
+
+        while not self.is_at_end() and self.check(TokenType.AT):
+            self.advance()  # Consume '@'
+            dec_expr = self.parse_call_subscript_attribute()
+            self.skip_newlines()
+            decorators.append(dec_expr)
+
+        self.skip_newlines()
+        next_tok = self.peek()
+        py_kw = self.get_py_keyword(next_tok)
+
+        if py_kw == "def":
+            func = self.parse_function_definition()
+            func.decorators = decorators
+            func.start_pos = start_pos
+            return func
+
+        if py_kw == "class":
+            cls = self.parse_class_definition()
+            cls.decorators = decorators
+            cls.start_pos = start_pos
+            return cls
+
+        raise self._syntax_error("Expected function ('kaam') or class ('varg') definition after decorator", next_tok)
+
+    def parse_yield_statement(self) -> ExpressionStatement:
+        """Parses a yield statement: upaj [<value>] or upaj se <value>."""
+        start_tok = self.advance()  # Consume 'upaj'
+        start_pos = start_tok.start_pos
+
+        if self.check_py_keyword("from"):
+            self.advance()  # Consume 'se'
+            val = self.parse_expression()
+            self.expect_statement_terminator()
+            node = YieldFrom(value=val, start_pos=start_pos, end_pos=val.end_pos)
+            return ExpressionStatement(expr=node, start_pos=start_pos, end_pos=node.end_pos)
+
+        val = None
+        if not self.is_at_end() and self.peek().type not in (
+            TokenType.NEWLINE, TokenType.EOF, TokenType.SEMICOLON, TokenType.DEDENT
+        ):
+            val = self.parse_expression()
+
+        self.expect_statement_terminator()
+        end_pos = val.end_pos if val and val.end_pos else start_pos
+        node = Yield(value=val, start_pos=start_pos, end_pos=end_pos)
+        return ExpressionStatement(expr=node, start_pos=start_pos, end_pos=end_pos)
+
+    def parse_comprehension_clauses(self) -> List[ComprehensionClause]:
+        """Parses one or more 'har <target> mein <iterable> [agar <condition>]*' clauses."""
+        clauses: List[ComprehensionClause] = []
+
+        while not self.is_at_end() and self.check_py_keyword("for"):
+            for_tok = self.advance()  # Consume 'har'
+            clause_start = for_tok.start_pos
+
+            target = self.parse_primary()
+            if not self.check_py_keyword("in"):
+                raise self._syntax_error("Expected 'mein' or 'andar' after comprehension variable", self.peek())
+            self.advance()  # Consume 'mein' / 'andar'
+
+            iterable = self.parse_boolean_or()
+
+            conditions: List[Expression] = []
+            while not self.is_at_end() and self.check_py_keyword("if"):
+                self.advance()  # Consume 'agar'
+                cond = self.parse_boolean_or()
+                conditions.append(cond)
+
+            clause_end = conditions[-1].end_pos if conditions else iterable.end_pos
+            clauses.append(
+                ComprehensionClause(
+                    target=target,
+                    iterable=iterable,
+                    conditions=conditions,
+                    start_pos=clause_start,
+                    end_pos=clause_end,
+                )
+            )
+
+        return clauses
+
+    def parse_lambda(self) -> LambdaExpression:
+        """Parses an anonymous lambda function: sookshm [<params>]: <body>"""
+        start_tok = self.advance()  # Consume 'sookshm'
+        params: List[str] = []
+
+        if not self.check(TokenType.COLON):
+            param_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name in lambda")
+            params.append(str(param_tok.value))
+            while self.match(TokenType.COMMA):
+                if self.check(TokenType.COLON):
+                    break
+                param_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name in lambda")
+                params.append(str(param_tok.value))
+
+        self.expect(TokenType.COLON, "Expected ':' after lambda parameters")
+        body = self.parse_expression()
+        return LambdaExpression(
+            params=params,
+            body=body,
+            start_pos=start_tok.start_pos,
+            end_pos=body.end_pos,
+        )
+
     def parse_assignment_or_expression_statement(self) -> Statement:
         """Parses an assignment statement or an expression statement."""
         expr = self.parse_expression()
@@ -649,6 +771,8 @@ class HinglishParser:
 
     def parse_expression(self) -> Expression:
         """Top-level entry for parsing expressions."""
+        if self.check_py_keyword("lambda"):
+            return self.parse_lambda()
         return self.parse_boolean_or()
 
     def parse_boolean_or(self) -> Expression:
@@ -986,7 +1110,7 @@ class HinglishParser:
             self.advance()
             return Identifier(name=str(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
 
-        # 3. Parentheses: (expr) or tuple (x, y) or ()
+        # 3. Parentheses: (expr) or tuple (x, y) or () or generator expression (elt har ...)
         if self.match(TokenType.LPAREN):
             start_pos = tok.start_pos
             if self.match(TokenType.RPAREN):
@@ -994,6 +1118,18 @@ class HinglishParser:
                 return TupleLiteral(elements=[], start_pos=start_pos, end_pos=self.tokens[self.cursor - 1].end_pos)
 
             first = self.parse_expression()
+
+            # Generator expression: (elt har x mein iter [agar cond]*)
+            if self.check_py_keyword("for"):
+                clauses = self.parse_comprehension_clauses()
+                rparen = self.expect(TokenType.RPAREN, "Expected ')' after generator expression")
+                return GeneratorExpression(
+                    element=first,
+                    clauses=clauses,
+                    start_pos=start_pos,
+                    end_pos=rparen.end_pos,
+                )
+
             if self.match(TokenType.COMMA):
                 # Tuple literal (first, ...)
                 elements = [first]
@@ -1007,31 +1143,58 @@ class HinglishParser:
             rparen = self.expect(TokenType.RPAREN, "Expected ')' after expression")
             return first
 
-        # 4. Lists: [elem1, elem2, ...]
+        # 4. Lists: [elem1, elem2, ...] or [elt har x mein iter [agar cond]*]
         if self.match(TokenType.LBRACKET):
             start_pos = tok.start_pos
-            elements = []
-            if not self.check(TokenType.RBRACKET):
+            if self.match(TokenType.RBRACKET):
+                return ListLiteral(elements=[], start_pos=start_pos, end_pos=self.tokens[self.cursor - 1].end_pos)
+
+            first = self.parse_expression()
+
+            # List comprehension: [elt har x mein iter [agar cond]*]
+            if self.check_py_keyword("for"):
+                clauses = self.parse_comprehension_clauses()
+                rbracket = self.expect(TokenType.RBRACKET, "Expected ']' after list comprehension")
+                return ListComprehension(
+                    element=first,
+                    clauses=clauses,
+                    start_pos=start_pos,
+                    end_pos=rbracket.end_pos,
+                )
+
+            elements = [first]
+            while self.match(TokenType.COMMA):
+                if self.check(TokenType.RBRACKET):
+                    break
                 elements.append(self.parse_expression())
-                while self.match(TokenType.COMMA):
-                    if self.check(TokenType.RBRACKET):
-                        break
-                    elements.append(self.parse_expression())
 
             rbracket = self.expect(TokenType.RBRACKET, "Expected ']' after list elements")
             return ListLiteral(elements=elements, start_pos=start_pos, end_pos=rbracket.end_pos)
 
-        # 5. Dictionaries: {key1: val1, key2: val2, ...}
+        # 5. Dictionaries / Sets / Comprehensions: { ... }
         if self.match(TokenType.LBRACE):
             start_pos = tok.start_pos
-            keys = []
-            values = []
-            if not self.check(TokenType.RBRACE):
-                k = self.parse_expression()
-                self.expect(TokenType.COLON, "Expected ':' after dictionary key")
-                v = self.parse_expression()
-                keys.append(k)
-                values.append(v)
+            if self.match(TokenType.RBRACE):
+                # Empty dict {}
+                return DictLiteral(keys=[], values=[], start_pos=start_pos, end_pos=self.tokens[self.cursor - 1].end_pos)
+
+            first = self.parse_expression()
+
+            # Case A: Dictionary or Dict Comprehension
+            if self.match(TokenType.COLON):
+                first_val = self.parse_expression()
+                if self.check_py_keyword("for"):
+                    clauses = self.parse_comprehension_clauses()
+                    rbrace = self.expect(TokenType.RBRACE, "Expected '}' after dict comprehension")
+                    return DictComprehension(
+                        key=first,
+                        value=first_val,
+                        clauses=clauses,
+                        start_pos=start_pos,
+                        end_pos=rbrace.end_pos,
+                    )
+                keys = [first]
+                values = [first_val]
                 while self.match(TokenType.COMMA):
                     if self.check(TokenType.RBRACE):
                         break
@@ -1040,9 +1203,52 @@ class HinglishParser:
                     v = self.parse_expression()
                     keys.append(k)
                     values.append(v)
+                rbrace = self.expect(TokenType.RBRACE, "Expected '}' after dictionary elements")
+                return DictLiteral(keys=keys, values=values, start_pos=start_pos, end_pos=rbrace.end_pos)
 
-            rbrace = self.expect(TokenType.RBRACE, "Expected '}' after dictionary elements")
-            return DictLiteral(keys=keys, values=values, start_pos=start_pos, end_pos=rbrace.end_pos)
+            # Case B: Set Comprehension: {elt har x mein iter [agar cond]*}
+            if self.check_py_keyword("for"):
+                clauses = self.parse_comprehension_clauses()
+                rbrace = self.expect(TokenType.RBRACE, "Expected '}' after set comprehension")
+                return SetComprehension(
+                    element=first,
+                    clauses=clauses,
+                    start_pos=start_pos,
+                    end_pos=rbrace.end_pos,
+                )
+
+            # Case C: Set Literal: {elem1, elem2, ...}
+            set_elements = [first]
+            while self.match(TokenType.COMMA):
+                if self.check(TokenType.RBRACE):
+                    break
+                set_elements.append(self.parse_expression())
+            rbrace = self.expect(TokenType.RBRACE, "Expected '}' after set elements")
+            return SetLiteral(elements=set_elements, start_pos=start_pos, end_pos=rbrace.end_pos)
+
+        # 6. Yield expression: upaj [<value>] or upaj se <value>
+        if self.check_py_keyword("yield"):
+            start_tok = self.advance()
+            if self.check_py_keyword("from"):
+                self.advance()  # Consume 'se'
+                val = self.parse_expression()
+                return YieldFrom(value=val, start_pos=start_tok.start_pos, end_pos=val.end_pos)
+
+            val = None
+            if not self.is_at_end() and self.peek().type not in (
+                TokenType.RPAREN,
+                TokenType.RBRACKET,
+                TokenType.RBRACE,
+                TokenType.COMMA,
+                TokenType.COLON,
+                TokenType.NEWLINE,
+                TokenType.EOF,
+                TokenType.SEMICOLON,
+                TokenType.DEDENT,
+            ):
+                val = self.parse_expression()
+            end_pos = val.end_pos if val and val.end_pos else start_tok.start_pos
+            return Yield(value=val, start_pos=start_tok.start_pos, end_pos=end_pos)
 
         # Unexpected token
         raise self._syntax_error(f"Unexpected token '{tok.raw_text or tok.value}'", tok)

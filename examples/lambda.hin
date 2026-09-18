@@ -1,0 +1,31 @@
+# Hinglish Lambda Example: Anonymous Functions & Higher-Order Interoperability
+
+# 1. Basic lambda with two parameters
+gunan = sookshm a, b: a * b
+dikhao(f"Lambda multiply (6 * 7): {gunan(6, 7)}")
+
+# 2. Zero-parameter lambda
+sandesh = sookshm: "Namaste from Hinglish lambda!"
+dikhao(sandesh())
+
+# 3. Inline immediately invoked lambda
+antim = (sookshm x: x * x + 1)(9)
+dikhao(f"Inline lambda result: {antim}")
+
+# 4. Lambda in higher-order functions (sorted, map)
+chhaatra = [
+    {"naam": "Aman", "ank": 85},
+    {"naam": "Rohit", "ank": 92},
+    {"naam": "Priya", "ank": 78}
+]
+
+# Sort students by marks using lambda key
+krambaddh = sorted(chhaatra, key=sookshm b: b["ank"])
+dikhao(f"Sorted students: {krambaddh}")
+
+# 5. Closures capturing enclosing scope variables
+kaam gunak_banaye(n):
+    wapas sookshm x: x * n
+
+tiguna = gunak_banaye(3)
+dikhao(f"Closure result (3 * 8): {tiguna(8)}")

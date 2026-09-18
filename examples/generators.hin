@@ -1,0 +1,44 @@
+# Hinglish Generators Example: Yield, Yield From & Lazy Streams
+
+# 1. Generator function with upaj
+kaam fibonacci(seema):
+    a = 0
+    b = 1
+    ginti = 0
+    jabtak ginti < seema:
+        upaj a
+        agla = a + b
+        a = b
+        b = agla
+        ginti = ginti + 1
+
+# Lazy iteration with har loop
+dikhao("Fibonacci sequence:")
+har sankhya mein fibonacci(7):
+    dikhao(f"  Fib: {sankhya}")
+
+# 2. Bare upaj (yields None) and manual next()
+kaam kadam():
+    dikhao("First step")
+    upaj
+    dikhao("Second step with value")
+    upaj 42
+
+k = kadam()
+pehla = next(k)
+dikhao(f"Bare upaj value: {pehla}")
+doosra = next(k)
+dikhao(f"Second upaj value: {doosra}")
+
+# 3. Delegating generator using upaj se (yield from)
+kaam upa_dhara():
+    upaj 10
+    upaj 20
+
+kaam mukhya_dhara():
+    upaj 1
+    upaj se upa_dhara()
+    upaj 30
+
+dhara_suchi = [x har x mein mukhya_dhara()]
+dikhao(f"Combined stream via upaj se: {dhara_suchi}")
