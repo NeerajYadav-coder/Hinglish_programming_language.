@@ -11,6 +11,7 @@ from ..compiler import compile as compile_hinglish
 from ..exceptions import HinglishError
 from ..lexer import format_tokens, tokenize
 from ..parser import parse
+from ..runtime import run_file, start_repl
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -27,7 +28,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "file",
         nargs="?",
-        help="Path to the Hinglish script to run (.hin)",
+        help="Path to the Hinglish script to execute (.hin). If omitted, starts interactive REPL.",
     )
     parser.add_argument(
         "--tokens",
@@ -52,9 +53,14 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser = create_parser()
     args = parser.parse_args(argv)
 
+    # 1. Interactive REPL if no file provided
     if not args.file:
-        parser.print_help()
-        return 0
+        try:
+            start_repl()
+            return 0
+        except Exception as exc:
+            print(f"REPL Error: {exc}", file=sys.stderr)
+            return 1
 
     target_path = Path(args.file)
     if not target_path.is_file():
@@ -67,7 +73,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"Error reading {args.file}: {exc}", file=sys.stderr)
         return 1
 
-    # 1. Inspect Token Stream
+    # 2. Inspect Token Stream
     if args.tokens:
         try:
             tokens = tokenize(source_code)
@@ -78,7 +84,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"Lexer error in {args.file}:\n{err}", file=sys.stderr)
             return 1
 
-    # 2. Inspect AST
+    # 3. Inspect AST
     if args.ast:
         try:
             program_ast = parse(source_code)
@@ -89,7 +95,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"Syntax error in {args.file}:\n{err}", file=sys.stderr)
             return 1
 
-    # 3. Transpile to Python Source
+    # 4. Transpile to Python Source
     if args.transpile:
         try:
             py_code = compile_hinglish(source_code)
@@ -99,15 +105,19 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"Compilation error in {args.file}:\n{err}", file=sys.stderr)
             return 1
 
-    print(
-        f"[Hinglish v{__version__}] Compiler (Step 4) active.\n"
-        f"File '{args.file}' is syntactically valid.\n"
-        f"Tip: Use 'hinglish --tokens {args.file}' to inspect tokens.\n"
-        f"Tip: Use 'hinglish --ast {args.file}' to inspect the AST.\n"
-        f"Tip: Use 'hinglish --transpile {args.file}' to view generated Python code.",
-        file=sys.stderr,
-    )
-    return 0
+    # 5. Direct Execution
+    try:
+        run_file(target_path)
+        return 0
+    except HinglishError as err:
+        print(f"Hinglish Error in {args.file}:\n{err}", file=sys.stderr)
+        return 1
+    except RuntimeError as r_err:
+        print(f"{r_err}", file=sys.stderr)
+        return 1
+    except Exception as exc:
+        print(f"Error executing {args.file}: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

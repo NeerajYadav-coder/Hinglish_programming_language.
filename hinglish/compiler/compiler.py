@@ -1,6 +1,7 @@
 """Hinglish to Python Compiler and Code Generator.
 
-Consumes a Hinglish Program AST and generates clean, valid, and verified Python 3 source code.
+Consumes a Hinglish Program AST and generates clean, valid, and verified Python 3 source code
+along with source mapping for runtime traceback translation.
 """
 
 import ast
@@ -84,26 +85,40 @@ class HinglishCompiler:
 
     def __init__(self, registry: Optional[KeywordRegistry] = None) -> None:
         self.registry = registry or DEFAULT_KEYWORD_REGISTRY
-        self.line_map: Dict[int, int] = {}  # py_line -> hin_line
+        self.line_map: Dict[int, int] = {}  # py_line (1-based) -> hin_line (1-based)
 
     def compile(self, program: Program) -> str:
         """Compiles a Hinglish Program AST into validated Python 3 source code."""
+        py_source, _ = self.compile_with_map(program)
+        return py_source
+
+    def compile_with_map(self, program: Program) -> Tuple[str, Dict[int, int]]:
+        """Compiles a Program AST and returns (py_source, line_map)."""
         if not isinstance(program, Program):
             raise HinglishCompilerError(f"Expected Program AST node, got {type(program).__name__}")
 
-        lines: List[str] = []
+        self.line_map = {}
+        py_lines: List[str] = []
+        current_py_line = 1
+
         for stmt in program.body:
             stmt_code = self.compile_statement(stmt, indent_level=0)
             if stmt_code:
-                lines.append(stmt_code)
+                # Map each emitted Python line back to the statement's original Hinglish line
+                hin_line = stmt.start_pos.line if stmt.start_pos else 1
+                stmt_lines = stmt_code.split("\n")
+                for i in range(len(stmt_lines)):
+                    self.line_map[current_py_line + i] = hin_line
+                current_py_line += len(stmt_lines)
+                py_lines.append(stmt_code)
 
-        py_source = "\n".join(lines)
+        py_source = "\n".join(py_lines)
         if py_source and not py_source.endswith("\n"):
             py_source += "\n"
 
         # Validate syntax using Python's standard ast module
         self._validate_python_syntax(py_source)
-        return py_source
+        return py_source, self.line_map
 
     def _validate_python_syntax(self, py_source: str) -> None:
         """Validates that the generated Python source is parseable by Python's ast parser."""
@@ -235,7 +250,6 @@ class HinglishCompiler:
         """Compiles an expression, wrapping in parentheses if required by precedence."""
         # 1. Literals & Identifiers
         if isinstance(expr, Identifier):
-            # Check if identifier is a mapped builtin (e.g. dikhao -> print, lambai -> len)
             if self.registry.is_builtin_function(expr.name):
                 return self.registry.get_python_equivalent(expr.name) or expr.name
             return expr.name
@@ -282,7 +296,6 @@ class HinglishCompiler:
         # 3. Binary Operations
         if isinstance(expr, BinaryOperation):
             current_prec = self.PRECEDENCE.get(expr.op, 0)
-            # For right-associative power (**), right child keeps same prec
             left_prec = current_prec if expr.op != "**" else current_prec + 1
             right_prec = current_prec + 1 if expr.op != "**" else current_prec
 
