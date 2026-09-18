@@ -15,6 +15,20 @@ from ..parser import parse
 from .context import get_default_globals
 
 
+# Cache mapping normalized file paths to (source_code, line_map)
+_MODULE_SOURCE_CACHE: Dict[str, Tuple[str, Dict[int, int]]] = {}
+
+
+def register_source(filename: str, source_code: str, line_map: Dict[int, int]) -> None:
+    """Registers source code and line map for a compiled Hinglish file."""
+    _MODULE_SOURCE_CACHE[filename] = (source_code, line_map)
+    try:
+        resolved = str(Path(filename).resolve())
+        _MODULE_SOURCE_CACHE[resolved] = (source_code, line_map)
+    except Exception:
+        pass
+
+
 def format_runtime_exception(
     exc: Exception,
     filename: str,
@@ -22,30 +36,79 @@ def format_runtime_exception(
     line_map: Dict[int, int],
 ) -> str:
     """Translates a Python runtime exception traceback back to Hinglish line numbers."""
-    tb = exc.__traceback__
-    hin_line: Optional[int] = None
+    register_source(filename, source_code, line_map)
 
-    # Walk traceback frames in reverse to find the innermost frame in our file
+    tb = exc.__traceback__
+    hin_frames: List[Dict[str, Any]] = []
+
     current = tb
     while current is not None:
         frame_filename = current.tb_frame.f_code.co_filename
-        if frame_filename == filename:
-            py_line = current.tb_lineno
-            hin_line = line_map.get(py_line, py_line)
+        py_line = current.tb_lineno
+        func_name = current.tb_frame.f_code.co_name
+
+        # Lookup in cache
+        cached = _MODULE_SOURCE_CACHE.get(frame_filename)
+        if not cached:
+            try:
+                resolved = str(Path(frame_filename).resolve())
+                cached = _MODULE_SOURCE_CACHE.get(resolved)
+            except Exception:
+                pass
+
+        if cached:
+            src, lmap = cached
+            h_line = lmap.get(py_line, py_line)
+            src_lines = src.splitlines()
+            snippet = src_lines[h_line - 1].strip() if 1 <= h_line <= len(src_lines) else ""
+            hin_frames.append({
+                "filename": frame_filename,
+                "line": h_line,
+                "func": func_name,
+                "snippet": snippet,
+            })
+        elif frame_filename == filename:
+            h_line = line_map.get(py_line, py_line)
+            src_lines = source_code.splitlines()
+            snippet = src_lines[h_line - 1].strip() if 1 <= h_line <= len(src_lines) else ""
+            hin_frames.append({
+                "filename": filename,
+                "line": h_line,
+                "func": func_name,
+                "snippet": snippet,
+            })
+
         current = current.tb_next
 
-    # Extract source line snippet if line is known
-    source_snippet = ""
-    lines = source_code.splitlines()
-    if hin_line is not None and 1 <= hin_line <= len(lines):
-        source_snippet = f"\n  {lines[hin_line - 1].strip()}"
-
-    loc_str = f"line {hin_line}" if hin_line is not None else "unknown location"
     exc_name = type(exc).__name__
     exc_msg = str(exc)
 
+    if not hin_frames:
+        return f"Hinglish Runtime Error in '{filename}':\n{exc_name}: {exc_msg}"
+
+    # Innermost frame
+    innermost = hin_frames[-1]
+    err_file = innermost["filename"]
+    err_line = innermost["line"]
+    source_snippet = f"\n  {innermost['snippet']}" if innermost["snippet"] else ""
+
+    if len(hin_frames) > 1:
+        # Multi-frame traceback representation
+        tb_lines = ["Traceback (most recent call last):"]
+        for f in hin_frames:
+            tb_lines.append(f'  File "{f["filename"]}", line {f["line"]}, in {f["func"]}')
+            if f["snippet"]:
+                tb_lines.append(f'    {f["snippet"]}')
+        tb_str = "\n".join(tb_lines) + "\n"
+        return (
+            f"{tb_str}"
+            f"Hinglish Runtime Error in '{err_file}' (line {err_line}):"
+            f"{source_snippet}\n"
+            f"{exc_name}: {exc_msg}"
+        )
+
     return (
-        f"Hinglish Runtime Error in '{filename}' ({loc_str}):"
+        f"Hinglish Runtime Error in '{err_file}' (line {err_line}):"
         f"{source_snippet}\n"
         f"{exc_name}: {exc_msg}"
     )
@@ -101,4 +164,4 @@ def run_file(
     return run(source_code, filename=str(file_path), globals_dict=globals_dict)
 
 
-__all__ = ["run", "run_file", "format_runtime_exception"]
+__all__ = ["run", "run_file", "format_runtime_exception", "register_source", "_MODULE_SOURCE_CACHE"]

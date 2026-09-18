@@ -1,0 +1,42 @@
+# Data models with nested imports from utils.hin
+
+se utils laao mudra_format, validate_positive
+
+varg Product:
+    kaam __init__(self, product_id, title, price, in_stock):
+        validate_positive(price, "Product price")
+        self.product_id = product_id
+        self.title = title
+        self.price = price
+        self.in_stock = in_stock
+
+    kaam description(self):
+        wapas f"{self.title} ({mudra_format(self.price)})"
+
+
+varg OrderItem:
+    kaam __init__(self, product, quantity):
+        validate_positive(quantity, "Order quantity")
+        self.product = product
+        self.quantity = quantity
+
+    kaam item_total(self):
+        wapas self.product.price * self.quantity
+
+
+varg Order:
+    kaam __init__(self, order_id, customer_name):
+        self.order_id = order_id
+        self.customer_name = customer_name
+        self.items = []
+        self.status = "pending"
+
+    kaam add_item(self, item):
+        self.items.append(item)
+
+    kaam calculate_total(self, tax_rate):
+        subtotal = 0.0
+        har item mein self.items:
+            subtotal = subtotal + item.item_total()
+        tax = subtotal * tax_rate
+        wapas subtotal + tax

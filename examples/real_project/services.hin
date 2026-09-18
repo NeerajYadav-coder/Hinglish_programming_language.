@@ -1,0 +1,28 @@
+# Business logic services, async pipelines, and comprehensions
+
+se asyncio laao sleep jaise async_sleep
+se config laao DEFAULT_TAX_RATE
+se models laao Product, Order, OrderItem
+se utils laao mudra_format
+
+varg OrderService:
+    kaam __init__(self):
+        self.orders = []
+
+    kaam place_order(self, order):
+        total = order.calculate_total(DEFAULT_TAX_RATE)
+        order.total_amount = total
+        order.status = "placed"
+        self.orders.append(order)
+        wapas order
+
+    kaam get_large_order_ids(self, threshold):
+        # List comprehension filtering orders
+        wapas [o.order_id har o mein self.orders agar o.total_amount >= threshold]
+
+    # Asynchronous order settlement component
+    asamanantar kaam settle_order_async(self, order):
+        # Simulate non-blocking async network verification
+        intezaar async_sleep(0.01)
+        order.status = "settled"
+        wapas f"Order {order.order_id} settled successfully for {mudra_format(order.total_amount)}"

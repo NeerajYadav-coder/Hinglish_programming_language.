@@ -143,24 +143,64 @@ Value is 10
 >>>
 ```
 
-### 3. CLI Commands & Flags
+### 3. CLI Commands & Subcommands
 
-The `hinglish` CLI supports execution, debugging, and transpilation:
+The `hinglish` CLI supports both explicit subcommands and backward-compatible flags:
 
 ```bash
-# Run a Hinglish script
-hinglish script.hin
+# Subcommand Syntax
+hinglish run script.hin              # Execute a Hinglish script
+hinglish tokens script.hin           # Inspect token stream
+hinglish ast script.hin              # Inspect Abstract Syntax Tree
+hinglish transpile script.hin        # Transpile to Python source
+hinglish transpile script.hin -o out.py  # Save Python output to file
+hinglish repl                        # Start interactive REPL
 
-# Inspect token stream
-hinglish --tokens script.hin
-
-# Inspect Abstract Syntax Tree (AST)
-hinglish --ast script.hin
-
-# Transpile to Python source without executing
-hinglish --transpile script.hin
-
-# Check version
-hinglish --version
+# Shorthand Syntax (100% Backward Compatible)
+hinglish script.hin                  # Execute script directly
+hinglish --tokens script.hin         # Inspect tokens
+hinglish --ast script.hin            # Inspect AST
+hinglish --transpile script.hin      # Transpile to stdout
+hinglish --version                   # Show version (1.0.0)
 ```
+
+### 4. Standard Input (Stdin / Pipelines)
+
+Hinglish can read and execute source code directly from pipelines:
+
+```bash
+# Pipe code into hinglish
+cat script.hin | hinglish
+
+# Explicit stdin execution
+echo 'dikhao("Namaste")' | hinglish -
+```
+
+---
+
+## Real Multi-File Projects
+
+Hinglish provides first-class support for multi-file modular architectures:
+
+```text
+my_project/
+├── config.hin       # App constants and configuration
+├── utils.hin        # Helper functions and formatting
+├── models.hin       # Data classes and models
+├── services.hin     # Business logic & async operations
+└── main.hin         # Project entrypoint
+```
+
+### Module Resolution Semantics
+- **Executing Projects**: Run `hinglish /path/to/project/main.hin` from **any** working directory.
+- **Working Directory Independence**: Hinglish automatically sets `sys.path[0]` to the directory of the executed script, so relative `.hin` imports (`laao utils`, `se models laao Product`) resolve cleanly regardless of your current working directory.
+- **Nested & Inter-Module Imports**: A module (`models.hin`) can import another sibling module (`utils.hin`) without needing complex packaging configuration.
+- **Source-Mapped Multi-File Tracebacks**: When an exception occurs inside an imported `.hin` module, Hinglish renders a full traceback showing every `.hin` file name, exact line number, and original code snippet.
+- **Python Interoperability**: Hinglish seamlessly imports Python standard library modules (`se datetime laao datetime`, `se json laao dumps`), and Python scripts can import `.hin` files via `hinglish.runtime.install_import_hook()`.
+
+### Exit Codes
+- `0`: Successful execution, version display, help display, or clean REPL exit.
+- `1`: Program execution error (syntax errors, compiler errors, runtime exceptions, missing file, or source overwrite safety violation).
+- `2`: CLI argument usage error (unrecognized flags, missing file argument for subcommands).
+
 

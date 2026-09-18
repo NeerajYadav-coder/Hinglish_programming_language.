@@ -33,7 +33,9 @@ class HinglishSourceLoader(importlib.abc.SourceLoader):
         source = data.decode("utf-8")
         tree = parse(source)
         compiler = HinglishCompiler()
-        py_source, _ = compiler.compile_with_map(tree)
+        py_source, line_map = compiler.compile_with_map(tree)
+        from .engine import register_source
+        register_source(str(path), source, line_map)
         return compile(py_source, str(path), "exec")
 
 
@@ -48,13 +50,32 @@ class HinglishPathFinder(importlib.abc.MetaPathFinder):
         target: Optional[object] = None,
     ) -> Optional[importlib.machinery.ModuleSpec]:
         search_dirs = path if path is not None else sys.path
-        mod_name = fullname.rpartition(".")[-1]
+        mod_parts = fullname.split(".")
+        mod_name = mod_parts[-1]
 
         for entry in search_dirs:
-            candidate = Path(entry) / f"{mod_name}.hin"
+            entry_path = Path(entry)
+            # 1. Direct candidate: <entry>/<mod_name>.hin
+            candidate = entry_path / f"{mod_name}.hin"
             if candidate.is_file():
                 loader = HinglishSourceLoader(fullname, str(candidate))
                 return importlib.machinery.ModuleSpec(fullname, loader, origin=str(candidate))
+
+            # 2. Dotted candidate: <entry>/part1/part2.hin
+            rel_candidate = entry_path.joinpath(*mod_parts).with_suffix(".hin")
+            if rel_candidate.is_file():
+                loader = HinglishSourceLoader(fullname, str(rel_candidate))
+                return importlib.machinery.ModuleSpec(fullname, loader, origin=str(rel_candidate))
+
+            # 3. Package candidate: <entry>/part1/part2/__init__.hin
+            pkg_candidate = entry_path.joinpath(*mod_parts) / "__init__.hin"
+            if pkg_candidate.is_file():
+                loader = HinglishSourceLoader(fullname, str(pkg_candidate))
+                spec = importlib.machinery.ModuleSpec(
+                    fullname, loader, origin=str(pkg_candidate), is_package=True
+                )
+                spec.submodule_search_locations = [str(pkg_candidate.parent)]
+                return spec
 
         return None
 

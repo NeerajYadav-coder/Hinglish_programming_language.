@@ -1,0 +1,9 @@
+# Configuration settings for Hinglish Order Processing Engine
+
+APP_NAME = "Hinglish Order Platform"
+VERSION = "1.0.0"
+MAX_ITEMS_PER_ORDER = 100
+DEFAULT_TAX_RATE = 0.18
+
+kaam get_app_info():
+    wapas f"{APP_NAME} v{VERSION}"

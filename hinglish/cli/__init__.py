@@ -11,7 +11,7 @@ from ..compiler import compile as compile_hinglish
 from ..exceptions import HinglishError
 from ..lexer import format_tokens, tokenize
 from ..parser import parse
-from ..runtime import run_file, start_repl
+from ..runtime import run, run_file, start_repl
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -19,6 +19,22 @@ def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="hinglish",
         description="Hinglish — A Python-compatible programming language interface using Hinglish syntax.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Commands:
+  run <file>              Execute a Hinglish script (.hin)
+  tokens <file>           Tokenize and print token table
+  ast <file>              Parse and print Abstract Syntax Tree
+  transpile <file> [-o]   Transpile to Python source code
+  repl                    Start interactive REPL
+
+Shorthand Usage:
+  hinglish <file>            Run script directly
+  hinglish --tokens <file>   Inspect tokens
+  hinglish --ast <file>      Inspect AST
+  hinglish --transpile <file> Transpile to Python
+  hinglish                   Start interactive REPL (or execute stdin if piped)
+""",
     )
     parser.add_argument(
         "-v", "--version",
@@ -28,7 +44,18 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "file",
         nargs="?",
-        help="Path to the Hinglish script to execute (.hin). If omitted, starts interactive REPL.",
+        metavar="command|file",
+        help="Subcommand (run, tokens, ast, transpile, repl) or path to .hin script.",
+    )
+    parser.add_argument(
+        "sub_file",
+        nargs="?",
+        metavar="file",
+        help="Path to the Hinglish script when using a subcommand.",
+    )
+    parser.add_argument(
+        "-o", "--output",
+        help="Write transpiled Python code to specified file instead of stdout.",
     )
     parser.add_argument(
         "--tokens",
@@ -49,12 +76,46 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    """CLI main entrypoint."""
+    """CLI main entrypoint with predictable exit codes:
+
+    0: Success
+    1: Execution / Syntax / Runtime / File error
+    2: CLI argument usage error
+    """
     parser = create_parser()
     args = parser.parse_args(argv)
 
-    # 1. Interactive REPL if no file provided
-    if not args.file:
+    raw_cmd = args.file
+    sub_file = args.sub_file
+
+    # 1. Determine resolved command and target file
+    subcommands = {"run", "tokens", "ast", "transpile", "repl"}
+    if raw_cmd in subcommands:
+        command = raw_cmd
+        file_arg = sub_file
+    else:
+        if args.tokens:
+            command = "tokens"
+        elif args.ast:
+            command = "ast"
+        elif args.transpile:
+            command = "transpile"
+        elif raw_cmd:
+            command = "run"
+        else:
+            # If no file provided, check if stdin is being piped into hinglish
+            if not sys.stdin.isatty():
+                command = "run"
+                file_arg = "-"
+            else:
+                command = "repl"
+                file_arg = None
+
+        if raw_cmd and not (raw_cmd in subcommands):
+            file_arg = raw_cmd
+
+    # 2. Handle REPL command
+    if command == "repl":
         try:
             from ..runtime import install_import_hook
             install_import_hook()
@@ -64,61 +125,88 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"REPL Error: {exc}", file=sys.stderr)
             return 1
 
-    target_path = Path(args.file)
-    if not target_path.is_file():
-        print(f"Error: File not found: {args.file}", file=sys.stderr)
-        return 1
+    # 3. Validate file argument for file-based commands
+    if command in {"run", "tokens", "ast", "transpile"} and not file_arg:
+        print(f"Error: Subcommand '{command}' requires a script file argument.", file=sys.stderr)
+        return 2
 
-    try:
-        source_code = target_path.read_text(encoding="utf-8")
-    except Exception as exc:
-        print(f"Error reading {args.file}: {exc}", file=sys.stderr)
-        return 1
+    # 4. Handle reading source code (either from stdin '-' or from disk)
+    if file_arg == "-":
+        filename = "<stdin>"
+        try:
+            source_code = sys.stdin.read()
+        except Exception as exc:
+            print(f"Error reading standard input: {exc}", file=sys.stderr)
+            return 1
+        target_path = None
+    else:
+        target_path = Path(file_arg)
+        if not target_path.is_file():
+            print(f"Error: File not found: {file_arg}", file=sys.stderr)
+            return 1
+        filename = str(target_path)
+        try:
+            source_code = target_path.read_text(encoding="utf-8")
+        except Exception as exc:
+            print(f"Error reading {file_arg}: {exc}", file=sys.stderr)
+            return 1
 
-    # 2. Inspect Token Stream
-    if args.tokens:
+    # 5. Inspect Token Stream
+    if command == "tokens":
         try:
             tokens = tokenize(source_code)
-            print(f"Tokens for '{args.file}':\n")
+            print(f"Tokens for '{file_arg}':\n")
             print(format_tokens(tokens))
             return 0
         except HinglishError as err:
-            print(f"Lexer error in {args.file}:\n{err}", file=sys.stderr)
+            print(f"Lexer error in {file_arg}:\n{err}", file=sys.stderr)
             return 1
 
-    # 3. Inspect AST
-    if args.ast:
+    # 6. Inspect AST
+    if command == "ast":
         try:
             program_ast = parse(source_code)
-            print(f"Hinglish AST for '{args.file}':\n")
+            print(f"Hinglish AST for '{file_arg}':\n")
             print(format_ast(program_ast))
             return 0
         except HinglishError as err:
-            print(f"Syntax error in {args.file}:\n{err}", file=sys.stderr)
+            print(f"Syntax error in {file_arg}:\n{err}", file=sys.stderr)
             return 1
 
-    # 4. Transpile to Python Source
-    if args.transpile:
+    # 7. Transpile to Python Source
+    if command == "transpile":
         try:
             py_code = compile_hinglish(source_code)
-            sys.stdout.write(py_code)
+            if args.output:
+                out_path = Path(args.output)
+                if target_path and out_path.resolve() == target_path.resolve():
+                    print("Error: Output path cannot overwrite the source file.", file=sys.stderr)
+                    return 1
+                out_path.write_text(py_code, encoding="utf-8")
+            else:
+                sys.stdout.write(py_code)
             return 0
         except HinglishError as err:
-            print(f"Compilation error in {args.file}:\n{err}", file=sys.stderr)
+            print(f"Compilation error in {file_arg}:\n{err}", file=sys.stderr)
             return 1
 
-    # 5. Direct Execution
+    # 8. Direct Execution (File or Stdin)
     try:
-        run_file(target_path)
+        if target_path is not None:
+            run_file(target_path)
+        else:
+            from ..runtime import install_import_hook
+            install_import_hook()
+            run(source_code, filename=filename)
         return 0
     except HinglishError as err:
-        print(f"Hinglish Error in {args.file}:\n{err}", file=sys.stderr)
+        print(f"Hinglish Error in {file_arg}:\n{err}", file=sys.stderr)
         return 1
     except RuntimeError as r_err:
         print(f"{r_err}", file=sys.stderr)
         return 1
     except Exception as exc:
-        print(f"Error executing {args.file}: {exc}", file=sys.stderr)
+        print(f"Error executing {file_arg}: {exc}", file=sys.stderr)
         return 1
 
 

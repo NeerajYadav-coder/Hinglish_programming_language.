@@ -1,0 +1,15 @@
+# Utility helpers and Python standard library interoperability
+
+se datetime laao datetime
+
+kaam mudra_format(amount):
+    wapas f"Rs. {amount:.2f}"
+
+kaam current_timestamp():
+    now = datetime.now()
+    wapas now.strftime("%Y-%m-%d %H:%M:%S")
+
+kaam validate_positive(val, field_name):
+    agar val <= 0:
+        uthav ValueError(f"{field_name} must be positive, got {val}")
+    wapas sahi
