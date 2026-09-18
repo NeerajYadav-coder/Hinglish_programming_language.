@@ -156,6 +156,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       ))}
+
+      <div style={{ marginTop: 'auto', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)', paddingLeft: '0.5rem' }}>
+        <div
+          className="apple-pill"
+          style={{
+            fontSize: '0.75rem',
+            fontWeight: 600,
+            background: 'var(--accent-soft)',
+            color: 'var(--accent-color)',
+            border: '1px solid rgba(0, 113, 227, 0.25)',
+            width: 'fit-content'
+          }}
+        >
+          CreatedBYNJ5.0
+        </div>
+      </div>
     </aside>
   );
 };

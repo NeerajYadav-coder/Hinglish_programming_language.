@@ -55,6 +55,20 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="apple-pill" style={{ fontSize: '0.72rem', padding: '0.15rem 0.55rem' }}>
             v1.0.0
           </span>
+          <span
+            className="apple-pill"
+            style={{
+              fontSize: '0.72rem',
+              padding: '0.15rem 0.6rem',
+              fontWeight: 600,
+              background: 'var(--accent-soft)',
+              color: 'var(--accent-color)',
+              letterSpacing: '0.02em',
+              border: '1px solid rgba(0, 113, 227, 0.25)'
+            }}
+          >
+            CreatedBYNJ5.0
+          </span>
         </div>
       </div>
 

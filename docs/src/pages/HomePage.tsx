@@ -31,10 +31,21 @@ else:
     <div>
       {/* Apple-style Hero Section */}
       <section style={{ textAlign: 'center', padding: '2.5rem 0 3rem' }}>
-        <div style={{ display: 'inline-flex', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'inline-flex', gap: '0.6rem', marginBottom: '1.25rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <span className="apple-pill">
             <Sparkles size={13} />
             <span>Hinglish v1.0.0 Ab Live Hai</span>
+          </span>
+          <span
+            className="apple-pill"
+            style={{
+              background: 'rgba(16, 185, 129, 0.1)',
+              color: '#10b981',
+              borderColor: 'rgba(16, 185, 129, 0.25)',
+              fontWeight: 600
+            }}
+          >
+            CreatedBYNJ5.0
           </span>
         </div>
 

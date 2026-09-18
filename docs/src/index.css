@@ -123,11 +123,11 @@ code, pre, kbd {
   border-radius: 4px;
 }
 
-/* Content Area - Clean, wide and balanced */
+/* Content Area - Full width, no empty right side gap */
 .content-area {
   flex: 1;
-  max-width: 1180px;
-  padding: 2.25rem 2.75rem 5rem;
+  width: 100%;
+  padding: 2.25rem 3rem 5rem;
   min-width: 0;
 }
 

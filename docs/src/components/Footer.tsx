@@ -85,7 +85,7 @@ export const Footer: React.FC<FooterProps> = ({ currentRoute, navigate }) => {
         }}
       >
         <div>
-          <span>© 2026 Hinglish Language Project. MIT License ke antargat jaari.</span>
+          <span>© 2026 Hinglish Language Project • <strong style={{ color: 'var(--text-primary)' }}>CreatedBYNJ5.0</strong> • MIT License</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
