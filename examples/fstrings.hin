@@ -1,0 +1,28 @@
+# Hinglish F-Strings & String Interpolation Example
+
+naam = "Neeraj"
+umr = 21
+bhasha = "Hinglish"
+pi = 3.1415926535
+
+# 1. Simple variable interpolation
+dikhao(f"Mera naam {naam} hai.")
+
+# 2. Multiple interpolations in one string
+dikhao(f"Naam: {naam}, Umr: {umr}, Bhasha: {bhasha}")
+
+# 3. Arithmetic and expression interpolation
+x = 100
+y = 25
+dikhao(f"Kul jod: {x} + {y} = {x + y}")
+dikhao(f"Guna: {x} * {y} = {x * y}")
+
+# 4. Format specifiers (e.g. decimal precision)
+dikhao(f"Pi ka dashamlav maan: {pi:.2f}")
+dikhao(f"Pi ka 4 ank tak maan: {pi:.4f}")
+
+# 5. Conversion specifiers (!r for repr)
+dikhao(f"Repr representation: {naam!r}")
+
+# 6. Escaped curly braces {{ and }}
+dikhao(f"Literally curly braces: {{ye braces print honge}}, value: {x}")

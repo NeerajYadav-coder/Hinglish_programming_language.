@@ -144,6 +144,57 @@ class FromImport(Statement):
     names: List[Tuple[str, Optional[str]]] = field(default_factory=list)
 
 
+@dataclass
+class ClassDefinition(Statement):
+    """Class definition: varg <name>[(<bases>)]: <body>"""
+
+    name: str = ""
+    bases: List[Expression] = field(default_factory=list)
+    body: List[Statement] = field(default_factory=list)
+
+
+@dataclass
+class ExceptHandler(ASTNode):
+    """Exception handler clause: pakdo [<type>] [jaise <name>]: <body>"""
+
+    type: Optional[Expression] = None
+    name: Optional[str] = None
+    body: List[Statement] = field(default_factory=list)
+
+
+@dataclass
+class Try(Statement):
+    """Try block: koshish: <body> [pakdo ...]* [warna: ...] [antatah: ...]"""
+
+    body: List[Statement] = field(default_factory=list)
+    handlers: List[ExceptHandler] = field(default_factory=list)
+    else_body: Optional[List[Statement]] = None
+    finally_body: Optional[List[Statement]] = None
+
+
+@dataclass
+class Raise(Statement):
+    """Raise exception statement: uthav [<exc>]"""
+
+    exc: Optional[Expression] = None
+
+
+@dataclass
+class WithItem(ASTNode):
+    """Single context manager item: <context_expr> [jaise <optional_vars>]"""
+
+    context_expr: Expression = field(default_factory=Expression)
+    optional_vars: Optional[Expression] = None
+
+
+@dataclass
+class With(Statement):
+    """Context manager statement: saath <item1>, <item2>: <body>"""
+
+    items: List[WithItem] = field(default_factory=list)
+    body: List[Statement] = field(default_factory=list)
+
+
 # -----------------------------------------------------------------------------
 # Expressions
 # -----------------------------------------------------------------------------
@@ -183,6 +234,22 @@ class String(Expression):
 
     value: str = ""
     prefix: Optional[str] = None
+
+
+@dataclass
+class FormattedValue(Expression):
+    """Formatted value within an f-string: {value[!conversion][:format_spec]}."""
+
+    value: Expression = field(default_factory=Expression)
+    conversion: Optional[str] = None
+    format_spec: Optional[str] = None
+
+
+@dataclass
+class JoinedStr(Expression):
+    """F-string consisting of string literals and formatted values: f"..."."""
+
+    parts: List[Expression] = field(default_factory=list)
 
 
 @dataclass

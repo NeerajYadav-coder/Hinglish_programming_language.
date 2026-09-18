@@ -1,0 +1,17 @@
+# Hinglish Context Managers Example: saath ... jaise ...
+
+file_path = "sample_output.txt"
+
+# Writing to a file using context manager
+saath khol(file_path, "w") jaise f:
+    f.write("Namaste! Hinglish context manager file handling works flawlessly.\n")
+    f.write("Line 2: Data successfully persisted.\n")
+
+dikhao(f"File '{file_path}' mein data likha gaya.")
+
+# Reading from the file using context manager
+saath khol(file_path, "r") jaise f:
+    samagri = f.read()
+
+dikhao("File ki samagri:")
+dikhao(samagri.strip())

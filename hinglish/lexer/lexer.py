@@ -494,7 +494,7 @@ class HinglishLexer:
         raw_text = self._source[start_idx:self._cursor]
         val = "".join(chars)
         self._tokens.append(
-            Token(TokenType.STRING, val, start_pos, end_pos, raw_text)
+            Token(TokenType.STRING, val, start_pos, end_pos, raw_text, prefix=prefix)
         )
 
     def _scan_number(self) -> None:

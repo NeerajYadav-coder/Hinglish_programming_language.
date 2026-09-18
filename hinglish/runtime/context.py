@@ -21,6 +21,7 @@ def get_default_globals() -> Dict[str, Any]:
         "galat": False,
         "kuch_nahi": None,
         "shunya": None,
+        "khol": open,
     }
 
 

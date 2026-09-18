@@ -137,6 +137,7 @@ class KeywordRegistry:
             ("kul_jod", "sum"),
             ("adhiktam", "max"),
             ("nyuntam", "min"),
+            ("khol", "open"),
         ]
         for hin_fn, py_fn in builtins:
             self.register_builtin_function(hin_fn, py_fn)

@@ -1,0 +1,35 @@
+# Hinglish OOP Example: Classes, Methods, Constructors & Inheritance
+
+varg Vyakti:
+    kaam __init__(self, naam, umr):
+        self.naam = naam
+        self.umr = umr
+
+    kaam parichay(self):
+        wapas f"Mera naam {self.naam} hai aur meri umr {self.umr} saal hai."
+
+    kaam bolo(self, sandesh):
+        dikhao(f"{self.naam} ne kaha: {sandesh}")
+
+
+# Inheritance: Vidyarthi inherits from Vyakti
+varg Vidyarthi(Vyakti):
+    kaam __init__(self, naam, umr, kaksha, roll_no):
+        self.naam = naam
+        self.umr = umr
+        self.kaksha = kaksha
+        self.roll_no = roll_no
+
+    # Method override
+    kaam parichay(self):
+        wapas f"Vidyarthi {self.naam}, kaksha {self.kaksha}, roll {self.roll_no}"
+
+
+# Create instances
+p = Vyakti("Neeraj", 21)
+dikhao(p.parichay())
+p.bolo("Namaste Hinglish!")
+
+s = Vidyarthi("Rahul", 16, "10th", 42)
+dikhao(s.parichay())
+s.bolo("Main padhai kar raha hoon.")

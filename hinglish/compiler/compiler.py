@@ -15,15 +15,18 @@ from ..ast.nodes import (
     Boolean,
     BooleanOperation,
     Break,
+    ClassDefinition,
     Comparison,
     Complex,
     Continue,
     DictLiteral,
     ElifClause,
+    ExceptHandler,
     Expression,
     ExpressionStatement,
     Float,
     For,
+    FormattedValue,
     FromImport,
     FunctionCall,
     FunctionDefinition,
@@ -32,17 +35,22 @@ from ..ast.nodes import (
     Import,
     Indexing,
     Integer,
+    JoinedStr,
     ListLiteral,
     NoneLiteral,
     Pass,
     Program,
+    Raise,
     Return,
     Slice,
     Statement,
     String,
+    Try,
     TupleLiteral,
     UnaryOperation,
     While,
+    With,
+    WithItem,
 )
 from ..exceptions import HinglishCompilerError
 from ..keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry
@@ -102,15 +110,11 @@ class HinglishCompiler:
         current_py_line = 1
 
         for stmt in program.body:
-            stmt_code = self.compile_statement(stmt, indent_level=0)
-            if stmt_code:
-                # Map each emitted Python line back to the statement's original Hinglish line
-                hin_line = stmt.start_pos.line if stmt.start_pos else 1
-                stmt_lines = stmt_code.split("\n")
-                for i in range(len(stmt_lines)):
-                    self.line_map[current_py_line + i] = hin_line
-                current_py_line += len(stmt_lines)
-                py_lines.append(stmt_code)
+            stmt_lines = self.compile_statement_lines(stmt, indent_level=0)
+            for py_str, hin_line in stmt_lines:
+                self.line_map[current_py_line] = hin_line
+                py_lines.append(py_str)
+                current_py_line += 1
 
         py_source = "\n".join(py_lines)
         if py_source and not py_source.endswith("\n"):
@@ -140,50 +144,110 @@ class HinglishCompiler:
 
     def compile_statement(self, stmt: Statement, indent_level: int = 0) -> str:
         """Compiles a single statement with proper indentation."""
+        lines = [line_str for line_str, _ in self.compile_statement_lines(stmt, indent_level)]
+        return "\n".join(lines)
+
+    def compile_statement_lines(self, stmt: Statement, indent_level: int = 0) -> List[Tuple[str, int]]:
+        """Compiles a statement into a list of (python_line, hinglish_line) pairs."""
         indent = "    " * indent_level
+        hin_line = stmt.start_pos.line if stmt.start_pos else 1
 
         if isinstance(stmt, ExpressionStatement):
             expr_code = self.compile_expression(stmt.expr)
-            return f"{indent}{expr_code}"
+            return [(f"{indent}{expr_code}", hin_line)]
 
         if isinstance(stmt, Assignment):
             target_code = self.compile_expression(stmt.target)
             value_code = self.compile_expression(stmt.value)
-            return f"{indent}{target_code} {stmt.op} {value_code}"
+            return [(f"{indent}{target_code} {stmt.op} {value_code}", hin_line)]
 
         if isinstance(stmt, If):
-            return self._compile_if(stmt, indent_level)
+            return self._compile_if_lines(stmt, indent_level)
 
         if isinstance(stmt, While):
             cond_code = self.compile_expression(stmt.condition)
-            body_code = self._compile_body(stmt.body, indent_level + 1)
-            return f"{indent}while {cond_code}:\n{body_code}"
+            lines = [(f"{indent}while {cond_code}:", hin_line)]
+            lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
+            return lines
 
         if isinstance(stmt, For):
             target_code = self.compile_expression(stmt.target)
             iter_code = self.compile_expression(stmt.iterable)
-            body_code = self._compile_body(stmt.body, indent_level + 1)
-            return f"{indent}for {target_code} in {iter_code}:\n{body_code}"
+            lines = [(f"{indent}for {target_code} in {iter_code}:", hin_line)]
+            lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
+            return lines
 
         if isinstance(stmt, FunctionDefinition):
             params_str = ", ".join(stmt.params)
-            body_code = self._compile_body(stmt.body, indent_level + 1)
-            return f"{indent}def {stmt.name}({params_str}):\n{body_code}"
+            lines = [(f"{indent}def {stmt.name}({params_str}):", hin_line)]
+            lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
+            return lines
+
+        if isinstance(stmt, ClassDefinition):
+            bases_str = ""
+            if stmt.bases:
+                bases_compiled = [self.compile_expression(b) for b in stmt.bases]
+                bases_str = f"({', '.join(bases_compiled)})"
+            lines = [(f"{indent}class {stmt.name}{bases_str}:", hin_line)]
+            lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
+            return lines
+
+        if isinstance(stmt, Try):
+            lines = [(f"{indent}try:", hin_line)]
+            lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
+            for h in stmt.handlers:
+                h_hin = h.start_pos.line if h.start_pos else hin_line
+                clause = f"{indent}except"
+                if h.type is not None:
+                    clause += f" {self.compile_expression(h.type)}"
+                    if h.name:
+                        clause += f" as {h.name}"
+                clause += ":"
+                lines.append((clause, h_hin))
+                lines.extend(self._compile_body_lines(h.body, indent_level + 1, h_hin))
+            if stmt.else_body is not None:
+                else_hin = stmt.else_body[0].start_pos.line if stmt.else_body and stmt.else_body[0].start_pos else hin_line
+                lines.append((f"{indent}else:", else_hin))
+                lines.extend(self._compile_body_lines(stmt.else_body, indent_level + 1, else_hin))
+            if stmt.finally_body is not None:
+                fin_hin = stmt.finally_body[0].start_pos.line if stmt.finally_body and stmt.finally_body[0].start_pos else hin_line
+                lines.append((f"{indent}finally:", fin_hin))
+                lines.extend(self._compile_body_lines(stmt.finally_body, indent_level + 1, fin_hin))
+            return lines
+
+        if isinstance(stmt, Raise):
+            if stmt.exc is not None:
+                exc_code = self.compile_expression(stmt.exc)
+                return [(f"{indent}raise {exc_code}", hin_line)]
+            return [(f"{indent}raise", hin_line)]
+
+        if isinstance(stmt, With):
+            items_parts = []
+            for item in stmt.items:
+                c_code = self.compile_expression(item.context_expr)
+                if item.optional_vars is not None:
+                    v_code = self.compile_expression(item.optional_vars)
+                    items_parts.append(f"{c_code} as {v_code}")
+                else:
+                    items_parts.append(c_code)
+            lines = [(f"{indent}with {', '.join(items_parts)}:", hin_line)]
+            lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
+            return lines
 
         if isinstance(stmt, Return):
             if stmt.value is not None:
                 val_code = self.compile_expression(stmt.value)
-                return f"{indent}return {val_code}"
-            return f"{indent}return"
+                return [(f"{indent}return {val_code}", hin_line)]
+            return [(f"{indent}return", hin_line)]
 
         if isinstance(stmt, Pass):
-            return f"{indent}pass"
+            return [(f"{indent}pass", hin_line)]
 
         if isinstance(stmt, Break):
-            return f"{indent}break"
+            return [(f"{indent}break", hin_line)]
 
         if isinstance(stmt, Continue):
-            return f"{indent}continue"
+            return [(f"{indent}continue", hin_line)]
 
         if isinstance(stmt, Import):
             names_parts = []
@@ -192,7 +256,7 @@ class HinglishCompiler:
                     names_parts.append(f"{name} as {alias}")
                 else:
                     names_parts.append(name)
-            return f"{indent}import {', '.join(names_parts)}"
+            return [(f"{indent}import {', '.join(names_parts)}", hin_line)]
 
         if isinstance(stmt, FromImport):
             names_parts = []
@@ -201,7 +265,7 @@ class HinglishCompiler:
                     names_parts.append(f"{name} as {alias}")
                 else:
                     names_parts.append(name)
-            return f"{indent}from {stmt.module} import {', '.join(names_parts)}"
+            return [(f"{indent}from {stmt.module} import {', '.join(names_parts)}", hin_line)]
 
         line = stmt.start_pos.line if stmt.start_pos else None
         col = stmt.start_pos.column if stmt.start_pos else None
@@ -211,35 +275,44 @@ class HinglishCompiler:
             column=col,
         )
 
-    def _compile_if(self, stmt: If, indent_level: int) -> str:
-        """Compiles an If statement with elif and else branches."""
+    def _compile_if_lines(self, stmt: If, indent_level: int) -> List[Tuple[str, int]]:
+        """Compiles an If statement into (python_line, hinglish_line) pairs."""
         indent = "    " * indent_level
+        hin_line = stmt.start_pos.line if stmt.start_pos else 1
         cond_code = self.compile_expression(stmt.condition)
-        body_code = self._compile_body(stmt.body, indent_level + 1)
 
-        result = [f"{indent}if {cond_code}:\n{body_code}"]
+        lines: List[Tuple[str, int]] = [(f"{indent}if {cond_code}:", hin_line)]
+        lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
 
         for elif_clause in stmt.elif_clauses:
+            elif_hin = elif_clause.start_pos.line if elif_clause.start_pos else hin_line
             elif_cond = self.compile_expression(elif_clause.condition)
-            elif_body = self._compile_body(elif_clause.body, indent_level + 1)
-            result.append(f"{indent}elif {elif_cond}:\n{elif_body}")
+            lines.append((f"{indent}elif {elif_cond}:", elif_hin))
+            lines.extend(self._compile_body_lines(elif_clause.body, indent_level + 1, elif_hin))
 
         if stmt.else_body is not None:
-            else_body = self._compile_body(stmt.else_body, indent_level + 1)
-            result.append(f"{indent}else:\n{else_body}")
+            else_hin = stmt.else_body[0].start_pos.line if stmt.else_body and stmt.else_body[0].start_pos else hin_line
+            lines.append((f"{indent}else:", else_hin))
+            lines.extend(self._compile_body_lines(stmt.else_body, indent_level + 1, else_hin))
 
-        return "\n".join(result)
+        return lines
+
+    def _compile_body_lines(
+        self, body: List[Statement], indent_level: int, fallback_hin_line: int
+    ) -> List[Tuple[str, int]]:
+        """Compiles block statements into a list of (python_line, hinglish_line) pairs."""
+        if not body:
+            indent = "    " * indent_level
+            return [(f"{indent}pass", fallback_hin_line)]
+
+        lines: List[Tuple[str, int]] = []
+        for s in body:
+            lines.extend(self.compile_statement_lines(s, indent_level=indent_level))
+        return lines
 
     def _compile_body(self, body: List[Statement], indent_level: int) -> str:
         """Compiles a list of statements forming a block body."""
-        if not body:
-            return f"{'    ' * indent_level}pass"
-
-        lines: List[str] = []
-        for s in body:
-            compiled = self.compile_statement(s, indent_level=indent_level)
-            if compiled:
-                lines.append(compiled)
+        lines = [line_str for line_str, _ in self._compile_body_lines(body, indent_level, 1)]
         return "\n".join(lines)
 
     # -------------------------------------------------------------------------
@@ -266,6 +339,35 @@ class HinglishCompiler:
         if isinstance(expr, String):
             prefix = expr.prefix or ""
             return f"{prefix}{repr(expr.value)}"
+
+        if isinstance(expr, FormattedValue):
+            val_str = self.compile_expression(expr.value)
+            conv_str = f"!{expr.conversion}" if expr.conversion else ""
+            spec_str = f":{expr.format_spec}" if expr.format_spec else ""
+            return f"{{{val_str}{conv_str}{spec_str}}}"
+
+        if isinstance(expr, JoinedStr):
+            pieces = []
+            for part in expr.parts:
+                if isinstance(part, String):
+                    s = (
+                        part.value.replace("\\", "\\\\")
+                        .replace('"', '\\"')
+                        .replace("\n", "\\n")
+                        .replace("\r", "\\r")
+                        .replace("\t", "\\t")
+                        .replace("{", "{{")
+                        .replace("}", "}}")
+                    )
+                    pieces.append(s)
+                elif isinstance(part, FormattedValue):
+                    val_str = self.compile_expression(part.value)
+                    conv_str = f"!{part.conversion}" if part.conversion else ""
+                    spec_str = f":{part.format_spec}" if part.format_spec else ""
+                    pieces.append(f"{{{val_str}{conv_str}{spec_str}}}")
+                else:
+                    pieces.append(self.compile_expression(part))
+            return f'f"{"".join(pieces)}"'
 
         if isinstance(expr, Boolean):
             return "True" if expr.value else "False"

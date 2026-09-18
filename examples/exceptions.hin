@@ -1,0 +1,25 @@
+# Hinglish Exception Handling Example: koshish, pakdo, uthav, antatah
+
+kaam divide(a, b):
+    agar b == 0:
+        uthav ZeroDivisionError("Shunya se bhag nahi ho sakta!")
+    wapas a / b
+
+# 1. Handling custom raised exceptions
+koshish:
+    dikhao("10 / 2 =", divide(10, 2))
+    dikhao("10 / 0 =", divide(10, 0))
+pakdo ZeroDivisionError jaise e:
+    dikhao(f"Galti pakdi gayi: {e}")
+antatah:
+    dikhao("Pehla koshish block poora hua.")
+
+# 2. Handling type errors and multiple handlers
+koshish:
+    sankhya = purnank("invalid_number")
+pakdo ValueError jaise err:
+    dikhao(f"Invalid integer conversion pakda: {err}")
+pakdo TypeError jaise err:
+    dikhao(f"Type error pakda: {err}")
+antatah:
+    dikhao("Doosra koshish block poora hua.")

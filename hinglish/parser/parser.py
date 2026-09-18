@@ -14,15 +14,18 @@ from ..ast.nodes import (
     Boolean,
     BooleanOperation,
     Break,
+    ClassDefinition,
     Comparison,
     Complex,
     Continue,
     DictLiteral,
     ElifClause,
+    ExceptHandler,
     Expression,
     ExpressionStatement,
     Float,
     For,
+    FormattedValue,
     FromImport,
     FunctionCall,
     FunctionDefinition,
@@ -31,17 +34,22 @@ from ..ast.nodes import (
     Import,
     Indexing,
     Integer,
+    JoinedStr,
     ListLiteral,
     NoneLiteral,
     Pass,
     Program,
+    Raise,
     Return,
     Slice,
     Statement,
     String,
+    Try,
     TupleLiteral,
     UnaryOperation,
     While,
+    With,
+    WithItem,
 )
 from ..exceptions import HinglishSyntaxError
 from ..keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry
@@ -197,6 +205,14 @@ class HinglishParser:
             return self.parse_import()
         if py_kw == "from":
             return self.parse_from_import()
+        if py_kw == "class":
+            return self.parse_class_definition()
+        if py_kw == "try":
+            return self.parse_try()
+        if py_kw == "raise":
+            return self.parse_raise()
+        if py_kw == "with":
+            return self.parse_with()
 
         # Expression or Assignment
         return self.parse_assignment_or_expression_statement()
@@ -431,6 +447,150 @@ class HinglishParser:
             start_pos=start_pos,
             end_pos=self.peek().end_pos,
         )
+
+    def parse_class_definition(self) -> ClassDefinition:
+        """Parses a class definition: varg <name>[(<bases>)]: <body>"""
+        start_tok = self.advance()  # Consume 'varg' (or alias)
+        start_pos = start_tok.start_pos
+
+        name_tok = self.expect(TokenType.IDENTIFIER, "Expected class name after 'varg'")
+        class_name = str(name_tok.value)
+
+        bases: List[Expression] = []
+        if self.match(TokenType.LPAREN):
+            if not self.check(TokenType.RPAREN):
+                bases.append(self.parse_expression())
+                while self.match(TokenType.COMMA):
+                    if self.check(TokenType.RPAREN):
+                        break
+                    bases.append(self.parse_expression())
+            self.expect(TokenType.RPAREN, "Expected ')' after base classes")
+
+        body = self.parse_block("varg")
+        end_pos = body[-1].end_pos if body else name_tok.end_pos
+        return ClassDefinition(
+            name=class_name,
+            bases=bases,
+            body=body,
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
+
+    def parse_try(self) -> Try:
+        """Parses a try statement: koshish: <body> [pakdo ...]* [warna: ...] [antatah: ...]"""
+        start_tok = self.advance()  # Consume 'koshish'
+        start_pos = start_tok.start_pos
+
+        body = self.parse_block("koshish")
+
+        handlers: List[ExceptHandler] = []
+        self.skip_newlines()
+        while not self.is_at_end() and self.check_py_keyword("except"):
+            handler_tok = self.advance()  # Consume 'pakdo'
+            h_start_pos = handler_tok.start_pos
+
+            exc_type: Optional[Expression] = None
+            exc_name: Optional[str] = None
+
+            if not self.check(TokenType.COLON):
+                exc_type = self.parse_expression()
+                if self.check_py_keyword("as"):
+                    self.advance()  # Consume 'jaise'
+                    name_tok = self.expect(TokenType.IDENTIFIER, "Expected identifier after 'jaise'")
+                    exc_name = str(name_tok.value)
+
+            handler_body = self.parse_block("pakdo")
+            h_end_pos = handler_body[-1].end_pos if handler_body else h_start_pos
+            handlers.append(
+                ExceptHandler(
+                    type=exc_type,
+                    name=exc_name,
+                    body=handler_body,
+                    start_pos=h_start_pos,
+                    end_pos=h_end_pos,
+                )
+            )
+            self.skip_newlines()
+
+        else_body: Optional[List[Statement]] = None
+        self.skip_newlines()
+        if not self.is_at_end() and self.check_py_keyword("else"):
+            self.advance()  # Consume 'warna'
+            else_body = self.parse_block("warna")
+            self.skip_newlines()
+
+        finally_body: Optional[List[Statement]] = None
+        self.skip_newlines()
+        if not self.is_at_end() and self.check_py_keyword("finally"):
+            self.advance()  # Consume 'antatah'
+            finally_body = self.parse_block("antatah")
+
+        if not handlers and finally_body is None:
+            raise self._syntax_error("Expected 'pakdo' or 'antatah' after 'koshish' block", start_tok)
+
+        end_pos = (
+            finally_body[-1].end_pos
+            if finally_body
+            else (
+                else_body[-1].end_pos
+                if else_body
+                else (handlers[-1].end_pos if handlers else body[-1].end_pos if body else start_pos)
+            )
+        )
+
+        return Try(
+            body=body,
+            handlers=handlers,
+            else_body=else_body,
+            finally_body=finally_body,
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
+
+    def parse_raise(self) -> Raise:
+        """Parses a raise statement: uthav [<exc>]"""
+        start_tok = self.advance()  # Consume 'uthav'
+        start_pos = start_tok.start_pos
+
+        exc: Optional[Expression] = None
+        if not self.is_at_end() and self.peek().type not in (TokenType.NEWLINE, TokenType.EOF, TokenType.SEMICOLON, TokenType.DEDENT):
+            exc = self.parse_expression()
+
+        self.expect_statement_terminator()
+        end_pos = exc.end_pos if exc and exc.end_pos else start_pos
+        return Raise(exc=exc, start_pos=start_pos, end_pos=end_pos)
+
+    def parse_with(self) -> With:
+        """Parses a context manager statement: saath <item1>, <item2>: <body>"""
+        start_tok = self.advance()  # Consume 'saath'
+        start_pos = start_tok.start_pos
+
+        items: List[WithItem] = []
+        while True:
+            item_start = self.peek().start_pos
+            context_expr = self.parse_expression()
+            optional_vars: Optional[Expression] = None
+
+            if self.check_py_keyword("as"):
+                self.advance()  # Consume 'jaise'
+                optional_vars = self.parse_primary()
+
+            item_end = optional_vars.end_pos if optional_vars and optional_vars.end_pos else context_expr.end_pos
+            items.append(
+                WithItem(
+                    context_expr=context_expr,
+                    optional_vars=optional_vars,
+                    start_pos=item_start,
+                    end_pos=item_end,
+                )
+            )
+
+            if not self.match(TokenType.COMMA):
+                break
+
+        body = self.parse_block("saath")
+        end_pos = body[-1].end_pos if body else start_pos
+        return With(items=items, body=body, start_pos=start_pos, end_pos=end_pos)
 
     def parse_assignment_or_expression_statement(self) -> Statement:
         """Parses an assignment statement or an expression statement."""
@@ -809,7 +969,9 @@ class HinglishParser:
 
         if tok.type == TokenType.STRING:
             self.advance()
-            return String(value=str(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+            if tok.prefix and "f" in tok.prefix.lower():
+                return self.parse_fstring(tok)
+            return String(value=str(tok.value), prefix=tok.prefix, start_pos=tok.start_pos, end_pos=tok.end_pos)
 
         if tok.type == TokenType.BOOLEAN:
             self.advance()
@@ -884,3 +1046,181 @@ class HinglishParser:
 
         # Unexpected token
         raise self._syntax_error(f"Unexpected token '{tok.raw_text or tok.value}'", tok)
+
+    def parse_fstring(self, tok: Token) -> Expression:
+        """Parses an f-string into a JoinedStr AST node containing String and FormattedValue parts."""
+        from ..lexer.lexer import HinglishLexer
+
+        val = str(tok.value)
+        parts: List[Expression] = []
+        current_literal: List[str] = []
+        i = 0
+        n = len(val)
+
+        while i < n:
+            # Escaped opening brace {{ -> literal {
+            if val[i : i + 2] == "{{":
+                current_literal.append("{")
+                i += 2
+                continue
+
+            # Escaped closing brace }} -> literal }
+            if val[i : i + 2] == "}}":
+                current_literal.append("}")
+                i += 2
+                continue
+
+            # Unescaped closing brace
+            if val[i] == "}":
+                raise self._syntax_error("f-string: single '}' is not allowed", tok)
+
+            # Opening brace { -> interpolation
+            if val[i] == "{":
+                if current_literal:
+                    parts.append(
+                        String(
+                            value="".join(current_literal),
+                            start_pos=tok.start_pos,
+                            end_pos=tok.end_pos,
+                        )
+                    )
+                    current_literal = []
+
+                i += 1  # Skip '{'
+                brace_depth = 1
+                paren_depth = 0
+                bracket_depth = 0
+                in_str: Optional[str] = None
+                escaped = False
+                expr_chars: List[str] = []
+
+                while i < n:
+                    c = val[i]
+                    if in_str:
+                        expr_chars.append(c)
+                        if escaped:
+                            escaped = False
+                        elif c == "\\":
+                            escaped = True
+                        elif c == in_str:
+                            in_str = None
+                        i += 1
+                        continue
+
+                    if c in ('"', "'"):
+                        in_str = c
+                        expr_chars.append(c)
+                        i += 1
+                        continue
+
+                    if c == "(":
+                        paren_depth += 1
+                    elif c == ")":
+                        if paren_depth > 0:
+                            paren_depth -= 1
+                    elif c == "[":
+                        bracket_depth += 1
+                    elif c == "]":
+                        if bracket_depth > 0:
+                            bracket_depth -= 1
+                    elif c == "{":
+                        brace_depth += 1
+                    elif c == "}":
+                        if brace_depth == 1 and paren_depth == 0 and bracket_depth == 0:
+                            i += 1
+                            break
+                        brace_depth -= 1
+
+                    expr_chars.append(c)
+                    i += 1
+                else:
+                    raise self._syntax_error("f-string: expecting '}'", tok)
+
+                expr_content = "".join(expr_chars)
+                if not expr_content.strip():
+                    raise self._syntax_error("f-string: empty expression not allowed", tok)
+
+                # Scan top-level ':' for format_spec
+                spec_idx: Optional[int] = None
+                sub_brace = 0
+                sub_paren = 0
+                sub_bracket = 0
+                sub_str = None
+                sub_esc = False
+
+                for idx, ch in enumerate(expr_content):
+                    if sub_str:
+                        if sub_esc:
+                            sub_esc = False
+                        elif ch == "\\":
+                            sub_esc = True
+                        elif ch == sub_str:
+                            sub_str = None
+                        continue
+                    if ch in ('"', "'"):
+                        sub_str = ch
+                        continue
+                    if ch == "(":
+                        sub_paren += 1
+                    elif ch == ")":
+                        if sub_paren > 0:
+                            sub_paren -= 1
+                    elif ch == "[":
+                        sub_bracket += 1
+                    elif ch == "]":
+                        if sub_bracket > 0:
+                            sub_bracket -= 1
+                    elif ch == "{":
+                        sub_brace += 1
+                    elif ch == "}":
+                        if sub_brace > 0:
+                            sub_brace -= 1
+                    elif ch == ":" and sub_brace == 0 and sub_paren == 0 and sub_bracket == 0:
+                        spec_idx = idx
+                        break
+
+                format_spec: Optional[str] = None
+                if spec_idx is not None:
+                    format_spec = expr_content[spec_idx + 1 :]
+                    code_part = expr_content[:spec_idx]
+                else:
+                    code_part = expr_content
+
+                conversion: Optional[str] = None
+                code_part_stripped = code_part.rstrip()
+                if len(code_part_stripped) >= 2 and code_part_stripped[-2] == "!" and code_part_stripped[-1] in ("r", "s", "a"):
+                    conversion = code_part_stripped[-1]
+                    code_part = code_part_stripped[:-2]
+
+                code_to_parse = code_part.strip()
+                if not code_to_parse:
+                    raise self._syntax_error("f-string: empty expression not allowed", tok)
+
+                sub_tokens = HinglishLexer(registry=self.registry).tokenize(code_to_parse)
+                sub_parser = HinglishParser(sub_tokens, source_code=code_to_parse, registry=self.registry)
+                parsed_expr = sub_parser.parse_expression()
+
+                parts.append(
+                    FormattedValue(
+                        value=parsed_expr,
+                        conversion=conversion,
+                        format_spec=format_spec,
+                        start_pos=tok.start_pos,
+                        end_pos=tok.end_pos,
+                    )
+                )
+                continue
+
+            current_literal.append(val[i])
+            i += 1
+
+        if current_literal:
+            parts.append(
+                String(
+                    value="".join(current_literal),
+                    start_pos=tok.start_pos,
+                    end_pos=tok.end_pos,
+                )
+            )
+
+        return JoinedStr(parts=parts, start_pos=tok.start_pos, end_pos=tok.end_pos)

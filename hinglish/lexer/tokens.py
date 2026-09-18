@@ -112,6 +112,7 @@ class Token:
     start_pos: Position
     end_pos: Position
     raw_text: Optional[str] = None
+    prefix: str = ""
 
     @property
     def line(self) -> int:
