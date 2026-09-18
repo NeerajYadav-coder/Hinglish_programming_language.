@@ -18,7 +18,7 @@ warna:
     dikhao("Hello!")
 `;
 
-  const pythonSample = `# Generated Python (Swayam Transpile Hota Hai)
+  const pythonSample = `# Generated Python (Piche yeh code banta hai)
 naam = "Neeraj"
 
 if naam == "Neeraj":
@@ -30,23 +30,22 @@ else:
   return (
     <div>
       {/* Apple-style Hero Section */}
-      <section style={{ textAlign: 'center', padding: '3rem 0 3.5rem' }}>
+      <section style={{ textAlign: 'center', padding: '2.5rem 0 3rem' }}>
         <div style={{ display: 'inline-flex', marginBottom: '1.25rem' }}>
           <span className="apple-pill">
             <Sparkles size={13} />
-            <span>Hinglish v1.0.0 Ab Uplabdh Hai</span>
+            <span>Hinglish v1.0.0 Ab Live Hai</span>
           </span>
         </div>
 
         <h1 className="hero-title">
-          Python ki shakti.<br />
-          Apni bhasha ka apnaapan.
+          Python ki power.<br />
+          Apni bhasha ka aasan code.
         </h1>
 
-        <p className="hero-subtitle" style={{ margin: '0 auto 2.5rem' }}>
-          Hinglish ek Python-backed programming language interface hai jismein aap 
-          Hindi aur Hinglish ke sahaj shabdon se code likh sakte hain, jabki 
-          CPython ka poora ecosystem aur execution transparently barkaraar rehte hain.
+        <p className="hero-subtitle" style={{ margin: '0 auto 2.25rem' }}>
+          Hinglish ek aasan programming language hai jismein aap Hindi aur Hinglish ke simple 
+          shabdon se code likh sakte hain. Background mein poora standard Python 3 hi chalta hai.
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -54,7 +53,7 @@ else:
             onClick={() => navigate('/getting-started')}
             className="apple-button-primary"
           >
-            <span>Shuru Karein (Get Started)</span>
+            <span>Abhi Shuru Karein</span>
             <ArrowRight size={16} />
           </button>
 
@@ -62,20 +61,20 @@ else:
             onClick={() => navigate('/keywords')}
             className="apple-button-secondary"
           >
-            <span>Shabdakosh (Keywords)</span>
+            <span>Keywords Dekhein</span>
           </button>
 
           <button
             onClick={() => navigate('/guide')}
             className="apple-button-secondary"
           >
-            <span>Bhasha Nirdeshika</span>
+            <span>Language Guide</span>
           </button>
         </div>
       </section>
 
-      {/* Interactive Code Comparison Preview */}
-      <section style={{ margin: '2rem 0 4rem' }}>
+      {/* Code Comparison Box */}
+      <section style={{ margin: '1.5rem 0 3.5rem' }}>
         <div
           style={{
             display: 'flex',
@@ -87,9 +86,9 @@ else:
           }}
         >
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Dekhein Hinglish Kaise Kaam Karti Hai</h3>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Dekhein Code Kaise Kaam Karta Hai</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Source code deterministic AST compiler dwara standard Python mein compile hota hai.
+              Aapka Hinglish code piche seedha standard Python 3 mein convert hota hai.
             </p>
           </div>
 
@@ -111,13 +110,13 @@ else:
                 fontWeight: activeTab === 'hinglish' ? 600 : 400,
                 padding: '0.35rem 0.9rem',
                 borderRadius: '9999px',
-                fontSize: '0.8rem',
+                fontSize: '0.82rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 boxShadow: activeTab === 'hinglish' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
               }}
             >
-              Hinglish Source (.hin)
+              Hinglish Code (.hin)
             </button>
             <button
               onClick={() => setActiveTab('python')}
@@ -128,13 +127,13 @@ else:
                 fontWeight: activeTab === 'python' ? 600 : 400,
                 padding: '0.35rem 0.9rem',
                 borderRadius: '9999px',
-                fontSize: '0.8rem',
+                fontSize: '0.82rem',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 boxShadow: activeTab === 'python' ? '0 1px 4px rgba(0,0,0,0.08)' : 'none'
               }}
             >
-              Generated Python 3
+              Python Output
             </button>
           </div>
         </div>
@@ -154,111 +153,109 @@ else:
         )}
       </section>
 
-      {/* Apple-style Lean Feature Cards */}
-      <section style={{ margin: '4rem 0' }}>
-        <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          Mukhya Visheshtayein (Core Highlights)
+      {/* Feature Cards in Simple Hindi */}
+      <section style={{ margin: '3.5rem 0' }}>
+        <h2 className="section-title" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          Hinglish Ki Khas Baatein
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem' }}>
           <div className="apple-card">
-            <div style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>
+            <div style={{ color: 'var(--accent-color)', marginBottom: '0.75rem' }}>
               <Cpu size={24} />
             </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-              Deterministic AST Compiler
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+              Real Python Compiler
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              Koi regex ya LLM guessing nahi. Hinglish source text ek formal typed AST mein parse hota hai 
-              aur verified Python 3 semantics mein translate hota hai.
+              Koi guessing ya AI model nahi hai. Ek real programming language compiler aapke code ko standard Python 3 mein convert karta hai.
             </p>
           </div>
 
           <div className="apple-card">
-            <div style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>
+            <div style={{ color: 'var(--accent-color)', marginBottom: '0.75rem' }}>
               <ShieldCheck size={24} />
             </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-              Zero Runtime Dependency
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+              Zero Extra Setup
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              Bina kisi third-party external runtime library ke chalta hai. Standard CPython 3.10+ par seedha run karein.
+              Sirf Python 3.10+ chahiye. Koi heavy external software ya extra libraries install karne ki jhanjhat nahi.
             </p>
           </div>
 
           <div className="apple-card">
-            <div style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>
+            <div style={{ color: 'var(--accent-color)', marginBottom: '0.75rem' }}>
               <FolderTree size={24} />
             </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-              Bahu-File (Multi-File) Projects
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+              Badi Apps (Multi-File)
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              Ek se adhik .hin files mein modular architecture banayein. Native module import aur working directory independence shamil hai.
+              Ek se jyada .hin files bana kar project banayein. Files ko aapas mein <code>laao</code> se import karein.
             </p>
           </div>
 
           <div className="apple-card">
-            <div style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>
+            <div style={{ color: 'var(--accent-color)', marginBottom: '0.75rem' }}>
               <Terminal size={24} />
             </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-              Shaktishali CLI aur REPL
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+              Aasan Terminal Commands
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              Console commands: <code>run</code>, <code>transpile</code>, <code>tokens</code>, <code>ast</code>, 
-              interactive REPL, aur standard input pipelines (<code>cat file.hin | hinglish</code>).
+              Terminal se seedha <code>hinglish file.hin</code> run karein, Python code transpile karein, ya interactive REPL use karein.
             </p>
           </div>
 
           <div className="apple-card">
-            <div style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>
+            <div style={{ color: 'var(--accent-color)', marginBottom: '0.75rem' }}>
               <FileCode2 size={24} />
             </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-              VS Code Tooling
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+              VS Code Extension
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              VS Code extension dwara .hin files ke liye full syntax highlighting, bracket auto-closing aur language configuration uplabdh hai.
+              VS Code mein .hin files kholte hi beautiful syntax colors aur bracket auto-close ka maza lein.
             </p>
           </div>
 
           <div className="apple-card">
-            <div style={{ color: 'var(--accent-color)', marginBottom: '1rem' }}>
+            <div style={{ color: 'var(--accent-color)', marginBottom: '0.75rem' }}>
               <Sparkles size={24} />
             </div>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 600, marginBottom: '0.5rem' }}>
-              Source-Mapped Tracebacks
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+              Aasan Error Messages
             </h3>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              Runtime exceptions aane par accurate .hin file name, exact line number, aur code snippet dikhata hai.
+              Agar code mein koi galti ho, toh accurate file name aur line number ke sath saaf error dikhayi deta hai.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Quick Setup Card */}
-      <section style={{ margin: '4rem 0' }}>
-        <div className="apple-card" style={{ background: 'var(--bg-secondary)', padding: '2.25rem' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-            Turant Shuru Karein (Quick Start)
+      {/* Quick Start Card */}
+      <section style={{ margin: '3.5rem 0' }}>
+        <div className="apple-card" style={{ background: 'var(--bg-secondary)', padding: '2rem' }}>
+          <h2 style={{ fontSize: '1.35rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+            Quick Start — 1 Minute Mein Shuru Karein
           </h2>
-          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-            Hinglish package ko Python 3.10+ environment mein seedha pip dwara install karein:
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
+            Hinglish ko apne system mein pip se install karke pehla program chalao:
           </p>
 
           <CodeBlock
-            code={`# Repository se install karein\npip install .\n\n# Pehla program banayein aur run karein\necho 'dikhao("Namaste Duniya!")' > hello.hin\nhinglish hello.hin`}
+            code={`# Install karein\npip install .\n\n# Pehli file banayein aur run karein\necho 'dikhao("Namaste Duniya!")' > hello.hin\nhinglish hello.hin`}
             language="bash"
             filename="terminal"
           />
 
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ marginTop: '1rem' }}>
             <button
               onClick={() => navigate('/getting-started')}
               className="apple-button-primary"
             >
-              <span>Poori Getting Started Guide Dekhein</span>
+              <span>Full Setup Guide Dekhein</span>
               <ArrowRight size={16} />
             </button>
           </div>

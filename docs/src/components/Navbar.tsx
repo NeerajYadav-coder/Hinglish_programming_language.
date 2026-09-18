@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           title="Search docs (Ctrl+K)"
         >
           <Search size={14} />
-          <span>Khojein...</span>
+          <span>Search karo...</span>
           <kbd
             style={{
               fontSize: '0.7rem',

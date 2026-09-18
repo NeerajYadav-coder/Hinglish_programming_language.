@@ -130,7 +130,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             ref={inputRef}
             type="text"
             className="spotlight-input"
-            placeholder="Keyword, topic, ya udaharan khojein (jaise: agar, varg, run, loop)..."
+            placeholder="Koi bhi keyword, topic ya example search karo (jaise agar, print, loop, varg)..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -150,14 +150,14 @@ export const SearchModal: React.FC<SearchModalProps> = ({
         <div className="spotlight-results">
           {query.trim() && results.length === 0 && (
             <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-              Koi parinam nahi mila "{query}" ke liye.
+              Koi result nahi mila "{query}" ke liye. Kuch aur try karein!
             </div>
           )}
 
           {!query.trim() && (
             <div style={{ padding: '1.5rem 1rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               <div style={{ fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
-                Lokpriya Khoj Suggestions:
+                Popular Searches:
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {['agar', 'kaam', 'varg', 'dikhao', 'asamanantar', 'milao', 'laao'].map((k) => (

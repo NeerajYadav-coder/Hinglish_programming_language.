@@ -4,8 +4,8 @@ export const EXAMPLES_DATA: ExampleItem[] = [
   {
     id: 'hello-world',
     title: '1. Namaste Duniya (Hello World)',
-    category: 'Buniyadi',
-    description: 'Hinglish ka sabse pehla basic program jo variables, conditional shart, aur dikhao (print) function ka pryog dikhata hai.',
+    category: 'Basic Code',
+    description: 'Hinglish ka sabse pehla basic program jo variables, agar-warna condition aur dikhao (print) ka use dikhata hai.',
     hinglishCode: `# Hinglish Mein Namaste Duniya
 naam = "Neeraj"
 
@@ -14,7 +14,7 @@ agar naam == "Neeraj":
 warna:
     dikhao("Hello!")
 `,
-    pythonCode: `# Python Samtulya Code
+    pythonCode: `# Generated Python Code
 naam = "Neeraj"
 
 if naam == "Neeraj":
@@ -27,36 +27,36 @@ else:
   },
   {
     id: 'conditionals',
-    title: '2. Shartein aur Conditionals',
+    title: '2. Conditions (agar, warna_agar, warna)',
     category: 'Control Flow',
-    description: 'agar, warna_agar, aur warna ka upyog karke complex sharton ka nirnay lena.',
-    hinglishCode: `# Conditionals ka pryog
+    description: 'Multiple conditions test karne ke liye agar, warna_agar aur warna ka simple upyog.',
+    hinglishCode: `# Conditions ka use
 umar = 17
 
 agar umar >= 18:
-    dikhao("Aap voting ke liye yogya hain!")
+    dikhao("Aap voting ke liye ready hain!")
 warna_agar umar >= 16:
     dikhao("Aap learner driving license le sakte hain!")
 warna:
-    dikhao("Abhi aap chhote hain, thoda intezaar karein!")
+    dikhao("Abhi aap chhote hain, thoda wait karein!")
 `,
     pythonCode: `umar = 17
 
 if umar >= 18:
-    print("Aap voting ke liye yogya hain!")
+    print("Aap voting ke liye ready hain!")
 elif umar >= 16:
     print("Aap learner driving license le sakte hain!")
 else:
-    print("Abhi aap chhote hain, thoda intezaar karein!")
+    print("Abhi aap chhote hain, thoda wait karein!")
 `,
     output: `Aap learner driving license le sakte hain!`,
-    keyConcepts: ['agar', 'warna_agar', 'warna', 'comparison operators']
+    keyConcepts: ['agar', 'warna_agar', 'warna', 'comparisons']
   },
   {
     id: 'loops',
     title: '3. Loops (jabtak aur har)',
     category: 'Control Flow',
-    description: 'Indefinite while loop (jabtak) aur sequence iterative for loop (har ... mein) ka saaf udaharan.',
+    description: 'While loop (jabtak) aur sequence par loop (har ... mein) ka saaf udaharan.',
     hinglishCode: `# While Loop (jabtak)
 ginti = 1
 jabtak ginti <= 3:
@@ -89,7 +89,7 @@ Mera pasandida phal: Kela`,
     id: 'functions',
     title: '4. Functions (kaam) aur Lambda (sookshm)',
     category: 'Functions',
-    description: 'Named functions (kaam), return (wapas), aur inline lightweight lambda expressions (sookshm).',
+    description: 'Apna function banayein (kaam), value return karein (wapas), aur ek-line ka lambda (sookshm) use karein.',
     hinglishCode: `# Function definition
 kaam jod(pehla, doosra = 10):
     wapas pehla + doosra
@@ -97,9 +97,9 @@ kaam jod(pehla, doosra = 10):
 kul = jod(25)
 dikhao(f"Kul jod: {kul}")
 
-# Sookshm (Lambda) Expression
+# Sookshm (Lambda) Function
 guna_do = sookshm x: x * 2
-dikhao(f"Double: {guna_do(15)}")
+dikhao(f"Double value: {guna_do(15)}")
 `,
     pythonCode: `def jod(pehla, doosra=10):
     return pehla + doosra
@@ -108,17 +108,17 @@ kul = jod(25)
 print(f"Kul jod: {kul}")
 
 guna_do = lambda x: x * 2
-print(f"Double: {guna_do(15)}")
+print(f"Double value: {guna_do(15)}")
 `,
     output: `Kul jod: 35
-Double: 30`,
+Double value: 30`,
     keyConcepts: ['kaam (def)', 'wapas (return)', 'default args', 'sookshm (lambda)']
   },
   {
     id: 'oop-classes',
     title: '5. Classes aur Objects (varg)',
     category: 'OOP',
-    description: 'Object-oriented programming using varg, khood (self), constructor initialization, and methods.',
+    description: 'Class banayein (varg), self ki jagah khood likhein, aur constructor init karein.',
     hinglishCode: `# Class definition
 varg Khata:
     kaam __init__(khood, dharak, rashi):
@@ -149,36 +149,36 @@ k.jama(250)
   },
   {
     id: 'exceptions',
-    title: '6. Exception Handling (koshish aur pakdo)',
-    category: 'Exceptions',
-    description: 'Robust error handling with koshish (try), pakdo (except), antatah (finally), and uthav (raise).',
-    hinglishCode: `# Exception Handling
+    title: '6. Error Handling (koshish aur pakdo)',
+    category: 'Errors',
+    description: 'Program ko crash hone se bachayein koshish (try), pakdo (except) aur antatah (finally) ke sath.',
+    hinglishCode: `# Error Handling
 koshish:
     sankhya = 10 / 0
 pakdo ZeroDivisionError jaise truti:
     dikhao(f"Galti pakdi gayi: {truti}")
 antatah:
-    dikhao("Yeh block har sthiti mein chalega (Clean-up sampann).")
+    dikhao("Yeh block har haal mein chalega (clean-up done).")
 `,
     pythonCode: `try:
     sankhya = 10 / 0
 except ZeroDivisionError as truti:
     print(f"Galti pakdi gayi: {truti}")
 finally:
-    print("Yeh block har sthiti mein chalega (Clean-up sampann).")
+    print("Yeh block har haal mein chalega (clean-up done).")
 `,
     output: `Galti pakdi gayi: division by zero
-Yeh block har sthiti mein chalega (Clean-up sampann).`,
+Yeh block har haal mein chalega (clean-up done).`,
     keyConcepts: ['koshish (try)', 'pakdo (except)', 'jaise (as)', 'antatah (finally)']
   },
   {
     id: 'comprehensions',
-    title: '7. Comprehensions aur Generators',
+    title: '7. List Comprehensions aur Generators (upaj)',
     category: 'Collections',
-    description: 'List, Dict comprehensions aur generator stream yield karne ke liye upaj keyword ka istemal.',
+    description: 'Ek line mein list filter karein aur upaj (yield) se values stream karein.',
     hinglishCode: `# List Comprehension
 sam_varg = [x ** 2 har x mein kram(1, 7) agar x % 2 == 0]
-dikhao("Sam sankhya ke varg:", sam_varg)
+dikhao("Even numbers ke square:", sam_varg)
 
 # Generator Function
 kaam gin():
@@ -190,7 +190,7 @@ har g mein gin():
     dikhao(f"Generator value: {g}")
 `,
     pythonCode: `sam_varg = [x ** 2 for x in range(1, 7) if x % 2 == 0]
-print("Sam sankhya ke varg:", sam_varg)
+print("Even numbers ke square:", sam_varg)
 
 def gin():
     yield 10
@@ -200,7 +200,7 @@ def gin():
 for g in gin():
     print(f"Generator value: {g}")
 `,
-    output: `Sam sankhya ke varg: [4, 16, 36]
+    output: `Even numbers ke square: [4, 16, 36]
 Generator value: 10
 Generator value: 20
 Generator value: 30`,
@@ -208,19 +208,19 @@ Generator value: 30`,
   },
   {
     id: 'async-await',
-    title: '8. Asynchronous Programming (asamanantar)',
+    title: '8. Async Programming (asamanantar aur intezaar)',
     category: 'Async',
-    description: 'Modern asynchronous workflows using asamanantar (async), intezaar (await), and asyncio integration.',
+    description: 'Fast background async code likhein asamanantar (async) aur intezaar (await) ke sath.',
     hinglishCode: `laao asyncio
 
 asamanantar kaam fetch_message(id):
     intezaar asyncio.sleep(0.01)
-    wapas f"Payload #{id} prapt hua"
+    wapas f"Payload #{id} mil gaya"
 
 asamanantar kaam mukhya():
     dikhao("Data mangwa rahe hain...")
     res = intezaar fetch_message(42)
-    dikhao("Async Natija:", res)
+    dikhao("Async Result:", res)
 
 asyncio.run(mukhya())
 `,
@@ -228,25 +228,25 @@ asyncio.run(mukhya())
 
 async def fetch_message(id):
     await asyncio.sleep(0.01)
-    return f"Payload #{id} prapt hua"
+    return f"Payload #{id} mil gaya"
 
 async def mukhya():
     print("Data mangwa rahe hain...")
     res = await fetch_message(42)
-    print("Async Natija:", res)
+    print("Async Result:", res)
 
 asyncio.run(mukhya())
 `,
     output: `Data mangwa rahe hain...
-Async Natija: Payload #42 prapt hua`,
+Async Result: Payload #42 mil gaya`,
     keyConcepts: ['asamanantar (async)', 'intezaar (await)', 'asyncio']
   },
   {
     id: 'pattern-matching',
-    title: '9. Structural Pattern Matching (milao aur sthiti)',
+    title: '9. Pattern Matching (milao aur sthiti)',
     category: 'Pattern Matching',
-    description: 'Python 3.10+ style structural pattern matching using milao (match), sthiti (case), wildcard _, and captures.',
-    hinglishCode: `# Pattern Matching Example
+    description: 'Python 3.10+ match-case semantics with milao, sthiti aur wildcard _ fallback.',
+    hinglishCode: `# Pattern Matching
 kaam process_status(code):
     milao code:
         sthiti 200:
@@ -256,7 +256,7 @@ kaam process_status(code):
         sthiti [code, sandesh]:
             dikhao(f"Complex Status [{code}]: {sandesh}")
         sthiti _:
-            dikhao("Agyaat status code")
+            dikhao("Unknown status code")
 
 process_status(200)
 process_status([500, "Server Error"])
@@ -270,7 +270,7 @@ process_status([500, "Server Error"])
         case [code, sandesh]:
             print(f"Complex Status [{code}]: {sandesh}")
         case _:
-            print("Agyaat status code")
+            print("Unknown status code")
 
 process_status(200)
 process_status([500, "Server Error"])
@@ -281,9 +281,9 @@ Complex Status [500]: Server Error`,
   },
   {
     id: 'multi-file',
-    title: '10. Bahu-File (Multi-File) Project Architecture',
+    title: '10. Multi-File Project Architecture',
     category: 'Projects',
-    description: 'Real-world multi-file layout with native .hin inter-module imports and working-directory independence.',
+    description: 'Real-world project layout: alag-alag .hin files banakar unhe laao (import) se connect karein.',
     hinglishCode: `# File: utils.hin
 kaam jod(a, b):
     wapas a + b
@@ -292,7 +292,7 @@ kaam jod(a, b):
 laao utils
 
 kul = utils.jod(15, 25)
-dikhao(f"Multi-file Jod Natija: {kul}")
+dikhao(f"Multi-file Total: {kul}")
 `,
     pythonCode: `# File: utils.py
 def jod(a, b):
@@ -302,16 +302,16 @@ def jod(a, b):
 import utils
 
 kul = utils.jod(15, 25)
-print(f"Multi-file Jod Natija: {kul}")
+print(f"Multi-file Total: {kul}")
 `,
-    output: `Multi-file Jod Natija: 40`,
+    output: `Multi-file Total: 40`,
     keyConcepts: ['laao (import)', 'multi-file .hin resolution', 'sys.path independence']
   },
   {
     id: 'editor-demo',
-    title: '11. Hinglish Full Showcase (v1.0.0)',
+    title: '11. Hinglish Full Showcase',
     category: 'Showcase',
-    description: 'Comprehensive test program covering OOP, decorators, exception handling, dictionary operations, and deletion.',
+    description: 'Full program covering classes, exceptions, dictionaries aur safe deletion.',
     hinglishCode: `# Hinglish v1.0.0 Showcase
 varg Calculator:
     kaam __init__(khood, offset = 0):

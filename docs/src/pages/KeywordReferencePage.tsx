@@ -34,14 +34,14 @@ export const KeywordReferencePage: React.FC = () => {
   return (
     <div>
       <div style={{ marginBottom: '2.5rem' }}>
-        <span className="apple-pill" style={{ marginBottom: '0.75rem' }}>Purna Shabdkosh</span>
-        <h1 className="hero-title" style={{ fontSize: '2.6rem' }}>Shabdakosh (Keyword Reference)</h1>
+        <span className="apple-pill" style={{ marginBottom: '0.75rem' }}>Keywords Reference</span>
+        <h1 className="hero-title" style={{ fontSize: '2.6rem' }}>Keywords Ki List</h1>
         <p className="hero-subtitle">
-          Hinglish v1.0.0 ke sabhi 30+ keywords, operators, literals, built-in functions, aur bolchal ke aliases ki searchable soochi.
+          Hinglish v1.0.0 ke sabhi 30+ keywords, operators, literals aur built-in functions ki searchable list.
         </p>
       </div>
 
-      {/* Apple-style Filter & Search Bar */}
+      {/* Filter & Search Bar */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
         <div style={{ position: 'relative' }}>
           <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -49,7 +49,7 @@ export const KeywordReferencePage: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Keyword, Python roop, ya arth khojein (jaise: agar, yield, print, break)..."
+            placeholder="Koi bhi keyword ya uska Python roop search karo (jaise agar, while, def, print)..."
             style={{
               width: '100%',
               padding: '0.85rem 1rem 0.85rem 2.8rem',
@@ -93,11 +93,11 @@ export const KeywordReferencePage: React.FC = () => {
         <table className="apple-table">
           <thead>
             <tr>
-              <th>Hinglish Token</th>
-              <th>Varg (Category)</th>
-              <th>Python Samtulya</th>
-              <th>Arth / Vivran</th>
-              <th>Udaharan (Snippet)</th>
+              <th>Hinglish Keyword</th>
+              <th>Category</th>
+              <th>Python Mein Kya Hota Hai?</th>
+              <th>Matlab aur Use</th>
+              <th>Code Snippet</th>
             </tr>
           </thead>
           <tbody>
@@ -167,7 +167,7 @@ export const KeywordReferencePage: React.FC = () => {
 
       {filteredKeywords.length === 0 && (
         <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)' }}>
-          Khoj parinam shunya hai. Kripya doosra shabda try karein.
+          Koi keyword nahi mila. Kuch aur search karke dekhein.
         </div>
       )}
     </div>

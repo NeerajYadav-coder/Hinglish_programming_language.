@@ -10,10 +10,10 @@ export const ExamplesPage: React.FC = () => {
   return (
     <div>
       <div style={{ marginBottom: '2.5rem' }}>
-        <span className="apple-pill" style={{ marginBottom: '0.75rem' }}>Pramanit Udaharan</span>
-        <h1 className="hero-title" style={{ fontSize: '2.6rem' }}>Udaharan Gallery (Examples)</h1>
+        <span className="apple-pill" style={{ marginBottom: '0.75rem' }}>Code Gallery</span>
+        <h1 className="hero-title" style={{ fontSize: '2.6rem' }}>Working Code Examples</h1>
         <p className="hero-subtitle">
-          Buniyadi Hello World se lekar advanced async pipelines aur pattern matching tak ke 11 verified executable programs.
+          Hello World se lekar advanced async aur pattern matching tak ke 11 real working examples.
         </p>
       </div>
 
@@ -33,7 +33,7 @@ export const ExamplesPage: React.FC = () => {
           }}
         >
           <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            Udaharan Chunein
+            Example Select Karein
           </div>
           {EXAMPLES_DATA.map((ex) => {
             const isSelected = ex.id === selectedId;
@@ -70,7 +70,7 @@ export const ExamplesPage: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
               <span className="apple-pill">{currentExample.category}</span>
             </div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.4rem' }}>
               {currentExample.title}
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6 }}>
@@ -95,21 +95,21 @@ export const ExamplesPage: React.FC = () => {
             </div>
           </div>
 
-          <h3 className="subsection-title">Hinglish Source (.hin)</h3>
+          <h3 className="subsection-title">Hinglish Code (.hin)</h3>
           <CodeBlock
             code={currentExample.hinglishCode}
             language="hin"
             filename="example.hin"
           />
 
-          <h3 className="subsection-title">Compiled Python Samtulya</h3>
+          <h3 className="subsection-title">Generated Python Code</h3>
           <CodeBlock
             code={currentExample.pythonCode}
             language="python"
             filename="example.py"
           />
 
-          <h3 className="subsection-title">Expected Execution Output</h3>
+          <h3 className="subsection-title">Terminal Output (Result)</h3>
           <div
             style={{
               background: 'var(--code-bg)',

@@ -22,34 +22,34 @@ interface SidebarProps {
 
 export const NAV_SECTIONS: NavSection[] = [
   {
-    title: 'Shuruaat (Introduction)',
+    title: 'Quick Start',
     items: [
-      { id: '/', title: 'Home', titleHi: 'Mukhya Prishth', iconName: 'Home' },
-      { id: '/getting-started', title: 'Getting Started', titleHi: 'Shuru Karein', iconName: 'Rocket' },
-      { id: '/examples', title: 'Examples', titleHi: 'Udaharan Gallery', iconName: 'Code', badge: '11 Demo' },
+      { id: '/', title: 'Home', titleHi: 'Home Page', iconName: 'Home' },
+      { id: '/getting-started', title: 'Getting Started', titleHi: 'Shuru Kaise Karein', iconName: 'Rocket' },
+      { id: '/examples', title: 'Examples', titleHi: 'Code Examples', iconName: 'Code', badge: '11 Demo' },
     ]
   },
   {
-    title: 'Bhasha aur Syntax',
+    title: 'Language aur Syntax',
     items: [
-      { id: '/guide', title: 'Language Guide', titleHi: 'Bhasha Nirdeshika', iconName: 'BookOpen' },
-      { id: '/keywords', title: 'Keywords', titleHi: 'Shabdakosh Explorer', iconName: 'Sparkles', badge: '30+' },
-      { id: '/python-compat', title: 'Python Semantics', titleHi: 'Python Sangatata', iconName: 'Cpu' },
+      { id: '/guide', title: 'Language Guide', titleHi: 'Language Guide', iconName: 'BookOpen' },
+      { id: '/keywords', title: 'Keywords', titleHi: 'Keywords ki List', iconName: 'Sparkles', badge: '30+' },
+      { id: '/python-compat', title: 'Python Semantics', titleHi: 'Python ke Sath', iconName: 'Cpu' },
     ]
   },
   {
-    title: 'Developer Tooling',
+    title: 'Developer Tools',
     items: [
-      { id: '/cli', title: 'CLI Reference', titleHi: 'CLI Nirdeshika', iconName: 'Terminal' },
-      { id: '/multi-file', title: 'Multi-File Projects', titleHi: 'Bahu-File Projects', iconName: 'FolderTree' },
-      { id: '/vscode', title: 'VS Code Extension', titleHi: 'VS Code Tooling', iconName: 'FileCode2' },
+      { id: '/cli', title: 'CLI Reference', titleHi: 'Terminal Commands (CLI)', iconName: 'Terminal' },
+      { id: '/multi-file', title: 'Multi-File Projects', titleHi: 'Multi-File Projects', iconName: 'FolderTree' },
+      { id: '/vscode', title: 'VS Code Extension', titleHi: 'VS Code Extension', iconName: 'FileCode2' },
     ]
   },
   {
-    title: 'Gahrai Mein (Deep Dive)',
+    title: 'Under the Hood',
     items: [
-      { id: '/architecture', title: 'Architecture', titleHi: 'System Sanrachna', iconName: 'Layers' },
-      { id: '/philosophy', title: 'Design Philosophy', titleHi: 'Design Vichardhara', iconName: 'BookOpen' },
+      { id: '/architecture', title: 'Architecture', titleHi: 'Kaise Kaam Karta Hai?', iconName: 'Layers' },
+      { id: '/philosophy', title: 'Design Philosophy', titleHi: 'Kyun Banaya? (Story)', iconName: 'BookOpen' },
     ]
   }
 ];
