@@ -6,35 +6,83 @@ from typing import Any, Optional
 
 
 class TokenType(Enum):
-    """Enumeration of token types in Hinglish."""
+    """Complete enumeration of token types for Hinglish and Python compatibility."""
 
-    # Keywords & Literals
+    # Keywords & Identifiers
     KEYWORD = auto()
     IDENTIFIER = auto()
-    NUMBER = auto()
+
+    # Literals
+    INTEGER = auto()
+    FLOAT = auto()
+    COMPLEX = auto()
     STRING = auto()
     BOOLEAN = auto()
     NONE = auto()
 
-    # Operators & Delimiters
-    OPERATOR = auto()
-    ASSIGN = auto()         # =
-    COLON = auto()          # :
-    COMMA = auto()          # ,
-    LPAREN = auto()         # (
-    RPAREN = auto()         # )
-    LBRACKET = auto()       # [
-    RBRACKET = auto()       # ]
-    LBRACE = auto()         # {
-    RBRACE = auto()         # }
-    DOT = auto()            # .
+    # Arithmetic Operators
+    PLUS = auto()               # +
+    MINUS = auto()              # -
+    STAR = auto()               # *
+    SLASH = auto()              # /
+    DOUBLE_SLASH = auto()       # //
+    PERCENT = auto()            # %
+    STAR_STAR = auto()          # **
+    AT = auto()                 # @
+
+    # Bitwise Operators
+    AMPERSAND = auto()          # &
+    PIPE = auto()               # |
+    CARET = auto()              # ^
+    TILDE = auto()              # ~
+    LSHIFT = auto()             # <<
+    RSHIFT = auto()             # >>
+
+    # Comparison Operators
+    EQ = auto()                 # ==
+    NE = auto()                 # !=
+    LT = auto()                 # <
+    GT = auto()                 # >
+    LE = auto()                 # <=
+    GE = auto()                 # >=
+
+    # Assignment & Augmented Assignments
+    ASSIGN = auto()             # =
+    PLUS_ASSIGN = auto()        # +=
+    MINUS_ASSIGN = auto()       # -=
+    STAR_ASSIGN = auto()        # *=
+    SLASH_ASSIGN = auto()       # /=
+    DOUBLE_SLASH_ASSIGN = auto()# //=
+    PERCENT_ASSIGN = auto()     # %=
+    STAR_STAR_ASSIGN = auto()   # **=
+    AT_ASSIGN = auto()          # @=
+    AMPERSAND_ASSIGN = auto()   # &=
+    PIPE_ASSIGN = auto()        # |=
+    CARET_ASSIGN = auto()       # ^=
+    LSHIFT_ASSIGN = auto()      # <<=
+    RSHIFT_ASSIGN = auto()      # >>=
+    WALRUS = auto()             # :=
+
+    # Delimiters & Punctuation
+    COLON = auto()              # :
+    COMMA = auto()              # ,
+    SEMICOLON = auto()          # ;
+    DOT = auto()                # .
+    ARROW = auto()              # ->
+    ELLIPSIS = auto()           # ...
+    LPAREN = auto()             # (
+    RPAREN = auto()             # )
+    LBRACKET = auto()           # [
+    RBRACKET = auto()           # ]
+    LBRACE = auto()             # {
+    RBRACE = auto()             # }
 
     # Layout & Indentation
     NEWLINE = auto()
     INDENT = auto()
     DEDENT = auto()
 
-    # Special / End-of-Stream
+    # Special
     COMMENT = auto()
     EOF = auto()
 
