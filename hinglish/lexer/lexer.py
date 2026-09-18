@@ -3,15 +3,24 @@
 Provides deterministic tokenization, robust Python-compliant indentation tracking
 (with INDENT, DEDENT, NEWLINE emission), implicit line continuation within
 parentheses/brackets/braces, explicit line continuation with backslashes,
-rich numeric and string literal support, and configurable keyword recognition.
+rich numeric, string literal, and Unicode identifier support, and configurable keyword recognition.
 """
 
-import re
 from typing import List, Optional
 
 from ..exceptions import HinglishIndentationError, HinglishLexerError
 from ..keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry
 from .tokens import Position, Token, TokenType
+
+
+def is_ident_start(ch: str) -> bool:
+    """Checks if a character is valid as the first character of an identifier (Unicode-aware)."""
+    return (ch == "_") or (ch.isidentifier() and not ch.isdigit())
+
+
+def is_ident_part(ch: str) -> bool:
+    """Checks if a character is valid as a subsequent character in an identifier (Unicode-aware)."""
+    return ("a" + ch).isidentifier()
 
 
 class HinglishLexer:
@@ -60,7 +69,6 @@ class HinglishLexer:
         "<": TokenType.LT,
         ">": TokenType.GT,
         "=": TokenType.ASSIGN,
-        "@": TokenType.AT,
         ":": TokenType.COLON,
         ",": TokenType.COMMA,
         ";": TokenType.SEMICOLON,
@@ -72,9 +80,6 @@ class HinglishLexer:
         "{": TokenType.LBRACE,
         "}": TokenType.RBRACE,
     }
-
-    IDENTIFIER_START = re.compile(r"[a-zA-Z_]")
-    IDENTIFIER_PART = re.compile(r"[a-zA-Z0-9_]")
 
     def __init__(
         self,
@@ -121,7 +126,6 @@ class HinglishLexer:
                     self._advance()
                 self._line += 1
                 self._col = 1
-                # Line continuation does not reset indentation
                 continue
 
             # 4. Newline handling
@@ -169,17 +173,48 @@ class HinglishLexer:
                     )
                 continue
 
-            # 6. String Literals (including prefixes: r, f, b, etc.)
+            # 6. Check for invalid repeated '@' (e.g. naam = @@@)
+            if ch == "@":
+                p1 = self._peek(1)
+                if p1 == "@":
+                    # Repeated '@' is an invalid token sequence
+                    current_line_text = self._get_current_line_text()
+                    raise HinglishLexerError(
+                        "Unexpected character '@'",
+                        line=self._line,
+                        column=self._col,
+                        source_line=current_line_text,
+                    )
+                # Single @ or @=
+                if p1 == "=":
+                    start_pos = Position(self._line, self._col)
+                    self._advance()
+                    self._advance()
+                    end_pos = Position(self._line, self._col)
+                    self._tokens.append(
+                        Token(TokenType.AT_ASSIGN, "@=", start_pos, end_pos, "@=")
+                    )
+                    continue
+                # Single @ (decorator or matrix op)
+                start_pos = Position(self._line, self._col)
+                self._advance()
+                end_pos = Position(self._line, self._col)
+                self._tokens.append(
+                    Token(TokenType.AT, "@", start_pos, end_pos, "@")
+                )
+                continue
+
+            # 7. String Literals (including prefixes: r, f, b, etc.)
             if self._is_string_start():
                 self._scan_string()
                 continue
 
-            # 7. Numeric Literals (decimal, hex, octal, binary, float, complex)
+            # 8. Numeric Literals (decimal, hex, octal, binary, float, complex)
             if ch.isdigit() or (ch == "." and self._cursor + 1 < self._length and self._source[self._cursor + 1].isdigit()):
                 self._scan_number()
                 continue
 
-            # 8. Multi-character Operators
+            # 9. Multi-character Operators
             matched_op = False
             for op_str, token_type in self.MULTI_CHAR_OPS:
                 if self._source.startswith(op_str, self._cursor):
@@ -195,7 +230,7 @@ class HinglishLexer:
             if matched_op:
                 continue
 
-            # 9. Single-character Operators & Delimiters
+            # 10. Single-character Operators & Delimiters
             if ch in self.SINGLE_CHAR_OPS:
                 token_type = self.SINGLE_CHAR_OPS[ch]
                 start_pos = Position(self._line, self._col)
@@ -211,12 +246,12 @@ class HinglishLexer:
                 self._tokens.append(Token(token_type, ch, start_pos, end_pos, ch))
                 continue
 
-            # 10. Identifiers & Keywords
-            if self.IDENTIFIER_START.match(ch):
+            # 11. Identifiers & Keywords (Supports Unicode / Devanagari)
+            if is_ident_start(ch):
                 self._scan_identifier_or_keyword()
                 continue
 
-            # Unrecognized character error
+            # Unrecognized character error (e.g. $, ?, `, etc.)
             current_line_text = self._get_current_line_text()
             raise HinglishLexerError(
                 f"Unexpected character '{ch}'",
@@ -225,7 +260,7 @@ class HinglishLexer:
                 source_line=current_line_text,
             )
 
-        # 11. End-of-File processing
+        # 12. End-of-File processing
         self._finalize_tokens()
         return self._tokens
 
@@ -268,7 +303,7 @@ class HinglishLexer:
                 indent_str.append(" ")
                 self._advance()
             elif ch == "\t":
-                indent_chars += 8  # Standard tab stop width
+                indent_chars += 8
                 indent_str.append("\t")
                 self._advance()
             else:
@@ -429,7 +464,6 @@ class HinglishLexer:
                 elif esc == '"':
                     chars.append('"')
                 elif esc in ("\r", "\n"):
-                    # Backslash newline inside string
                     if esc == "\r" and self._cursor < self._length and self._source[self._cursor] == "\n":
                         self._advance()
                     self._line += 1
@@ -569,11 +603,11 @@ class HinglishLexer:
         )
 
     def _scan_identifier_or_keyword(self) -> None:
-        """Scans words and determines if they are identifiers, keywords, or literals."""
+        """Scans words (supporting Unicode/Devanagari) and resolves keywords, literals, or identifiers."""
         start_pos = Position(self._line, self._col)
         start_idx = self._cursor
 
-        while self._cursor < self._length and self.IDENTIFIER_PART.match(self._source[self._cursor]):
+        while self._cursor < self._length and is_ident_part(self._source[self._cursor]):
             self._advance()
 
         word = self._source[start_idx:self._cursor]
@@ -599,7 +633,7 @@ class HinglishLexer:
             self._tokens.append(Token(TokenType.KEYWORD, word, start_pos, end_pos, word))
             return
 
-        # 3. Otherwise it is an IDENTIFIER (builtins like 'dikhao' are identified as identifiers)
+        # 3. Otherwise it is an IDENTIFIER
         self._tokens.append(Token(TokenType.IDENTIFIER, word, start_pos, end_pos, word))
 
     def _finalize_tokens(self) -> None:

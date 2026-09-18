@@ -3,6 +3,7 @@
 from typing import List, Optional
 
 from ..keywords import KeywordRegistry
+from .debug import format_tokens, print_tokens
 from .lexer import HinglishLexer
 from .tokens import Position, Token, TokenType
 
@@ -32,4 +33,6 @@ __all__ = [
     "BaseLexer",
     "HinglishLexer",
     "tokenize",
+    "format_tokens",
+    "print_tokens",
 ]

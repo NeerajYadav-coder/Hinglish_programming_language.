@@ -3,9 +3,17 @@
 import unittest
 from pathlib import Path
 
-from hinglish.exceptions import HinglishIndentationError, HinglishLexerError
+from hinglish.exceptions import (
+    HinglishIndentationError,
+    HinglishLexerError,
+)
 from hinglish.keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry
-from hinglish.lexer import HinglishLexer, TokenType, tokenize
+from hinglish.lexer import (
+    HinglishLexer,
+    TokenType,
+    format_tokens,
+    tokenize,
+)
 
 
 class TestHinglishLexer(unittest.TestCase):
@@ -28,6 +36,12 @@ class TestHinglishLexer(unittest.TestCase):
             ],
         )
         self.assertEqual(values, ["naam", "=", "Neeraj", "\n", None])
+
+    def test_unicode_and_devanagari_identifiers(self) -> None:
+        source = 'नाम = "नीरज"\nउम्र = 25\n'
+        tokens = tokenize(source)
+        ident_tokens = [t for t in tokens if t.type == TokenType.IDENTIFIER]
+        self.assertEqual([t.value for t in ident_tokens], ["नाम", "उम्र"])
 
     def test_numeric_literals(self) -> None:
         source = "10 42 1_000_000 0xff 0b1011 0o77 3.14 .5 1e-4 2.5E+3 3j 4.5J"
@@ -163,9 +177,9 @@ class TestHinglishLexer(unittest.TestCase):
         self.assertNotIn(TokenType.INDENT, types)
         self.assertNotIn(TokenType.DEDENT, types)
 
-    def test_comments(self) -> None:
+    def test_comments_with_hindi(self) -> None:
         source = (
-            "# Top comment\n"
+            "# यह एक comment है\n"
             "x = 10 # Inline comment\n"
             "       # Indented comment on empty block line\n"
             "y = 20\n"
@@ -189,6 +203,34 @@ class TestHinglishLexer(unittest.TestCase):
         values = [t.value for t in tokens if t.type in (TokenType.IDENTIFIER, TokenType.ASSIGN, TokenType.PLUS, TokenType.INTEGER)]
         self.assertEqual(values, ["x", "=", 10, "+", 20])
 
+    def test_source_locations(self) -> None:
+        source = "x = 42"
+        tokens = tokenize(source)
+        self.assertEqual(tokens[0].line, 1)
+        self.assertEqual(tokens[0].column, 1)
+        self.assertEqual(tokens[0].location, "Line 1, Column 1")
+        self.assertEqual(tokens[1].column, 3)
+        self.assertEqual(tokens[2].column, 5)
+
+    def test_invalid_input_error_at_at_at(self) -> None:
+        source = "naam = @@@"
+        with self.assertRaises(HinglishLexerError) as ctx:
+            tokenize(source)
+        err = ctx.exception
+        self.assertEqual(err.line, 1)
+        self.assertEqual(err.column, 8)
+        self.assertIn("Unexpected character '@'", str(err))
+        self.assertIn("naam = @@@", str(err))
+
+    def test_invalid_character_error_dollar(self) -> None:
+        source = "x = $$$"
+        with self.assertRaises(HinglishLexerError) as ctx:
+            tokenize(source)
+        err = ctx.exception
+        self.assertEqual(err.line, 1)
+        self.assertEqual(err.column, 5)
+        self.assertIn("Unexpected character '$'", str(err))
+
     def test_indentation_error_unmatched(self) -> None:
         source = (
             "agar x:\n"
@@ -210,6 +252,14 @@ class TestHinglishLexer(unittest.TestCase):
         source = 'naam = "Neeraj'
         with self.assertRaises(HinglishLexerError):
             tokenize(source)
+
+    def test_debug_format_tokens(self) -> None:
+        source = 'agar naam == "Neeraj":\n    dikhao("Namaste")'
+        tokens = tokenize(source)
+        table = format_tokens(tokens)
+        self.assertIn("KEYWORD", table)
+        self.assertIn("→ if", table)
+        self.assertIn("builtin (print)", table)
 
     def test_tokenize_all_example_files(self) -> None:
         example_dir = Path(__file__).parent.parent / "examples"

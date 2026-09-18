@@ -97,6 +97,11 @@ class Position:
     def __str__(self) -> str:
         return f"{self.line}:{self.column}"
 
+    @property
+    def location_str(self) -> str:
+        """Formatted human-readable location string."""
+        return f"Line {self.line}, Column {self.column}"
+
 
 @dataclass(frozen=True)
 class Token:
@@ -107,6 +112,21 @@ class Token:
     start_pos: Position
     end_pos: Position
     raw_text: Optional[str] = None
+
+    @property
+    def line(self) -> int:
+        """1-based line number where the token starts."""
+        return self.start_pos.line
+
+    @property
+    def column(self) -> int:
+        """1-based column offset where the token starts."""
+        return self.start_pos.column
+
+    @property
+    def location(self) -> str:
+        """Human-readable location string."""
+        return self.start_pos.location_str
 
     def __repr__(self) -> str:
         return (
