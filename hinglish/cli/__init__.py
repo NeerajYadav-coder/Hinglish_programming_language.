@@ -7,6 +7,7 @@ from typing import List, Optional
 
 from .. import __version__
 from ..ast import format_ast
+from ..compiler import compile as compile_hinglish
 from ..exceptions import HinglishError
 from ..lexer import format_tokens, tokenize
 from ..parser import parse
@@ -41,7 +42,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--transpile",
         action="store_true",
-        help="Transpile to Python source code without executing (upcoming steps).",
+        help="Transpile to valid Python source code and print to stdout.",
     )
     return parser
 
@@ -88,11 +89,22 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"Syntax error in {args.file}:\n{err}", file=sys.stderr)
             return 1
 
+    # 3. Transpile to Python Source
+    if args.transpile:
+        try:
+            py_code = compile_hinglish(source_code)
+            sys.stdout.write(py_code)
+            return 0
+        except HinglishError as err:
+            print(f"Compilation error in {args.file}:\n{err}", file=sys.stderr)
+            return 1
+
     print(
-        f"[Hinglish v{__version__}] Parser & AST (Step 3) active.\n"
+        f"[Hinglish v{__version__}] Compiler (Step 4) active.\n"
         f"File '{args.file}' is syntactically valid.\n"
         f"Tip: Use 'hinglish --tokens {args.file}' to inspect tokens.\n"
-        f"Tip: Use 'hinglish --ast {args.file}' to inspect the parsed AST.",
+        f"Tip: Use 'hinglish --ast {args.file}' to inspect the AST.\n"
+        f"Tip: Use 'hinglish --transpile {args.file}' to view generated Python code.",
         file=sys.stderr,
     )
     return 0

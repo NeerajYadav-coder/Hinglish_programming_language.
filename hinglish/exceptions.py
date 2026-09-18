@@ -45,3 +45,8 @@ class HinglishIndentationError(HinglishLexerError):
 class HinglishSyntaxError(HinglishError):
     """Raised when the parser encounters a grammatical syntax error."""
     pass
+
+
+class HinglishCompilerError(HinglishError):
+    """Raised when the compiler encounters an invalid AST node or compilation failure."""
+    pass
