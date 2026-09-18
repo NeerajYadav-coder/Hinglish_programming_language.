@@ -50,13 +50,11 @@ else:
         </div>
 
         <h1 className="hero-title">
-          Python ki power.<br />
-          Apni bhasha ka aasan code.
+          Code likho apni Hinglish mein.
         </h1>
 
         <p className="hero-subtitle" style={{ margin: '0 auto 2.25rem' }}>
-          Hinglish ek aasan programming language hai jismein aap Hindi aur Hinglish ke simple 
-          shabdon se code likh sakte hain. Background mein poora standard Python 3 hi chalta hai.
+          Real Python programming, ab bilkul simple aur natural Hinglish syntax ke sath.
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
