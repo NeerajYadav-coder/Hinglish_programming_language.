@@ -1,0 +1,34 @@
+# Hinglish Type Annotations & Walrus Operator Example
+# Demonstrates variable annotations, function annotations, and assignment expressions (:=)
+
+# 1. Variable Annotations (with and without initialization)
+pramanit_naam: str = "Aarav Sharma"
+sakriya: bool = sahi
+vikalp: int
+
+# 2. Function Annotations (parameters and return types)
+kaam calculate_bmi(wazan_kg: float, unchai_m: float) -> float:
+    wapas wazan_kg / (unchai_m * unchai_m)
+
+kaam greet_person(naam: str, umar: int = 18) -> str:
+    wapas f"Namaste {naam}, umar {umar}"
+
+dikhao("=== Type Annotations & Walrus Operator ===")
+dikhao(f"Name: {pramanit_naam}, Active: {sakriya}")
+
+# Inspect runtime annotations dictionary
+dikhao(f"calculate_bmi annotations: {calculate_bmi.__annotations__}")
+dikhao(f"greet_person annotations: {greet_person.__annotations__}")
+
+bmi = calculate_bmi(70.0, 1.75)
+dikhao(f"Calculated BMI: {bmi}")
+
+# 3. Walrus Operator (:=) in conditional
+items = ["apple", "banana", "cherry", "date"]
+agar (n := lambai(items)) > 3:
+    dikhao(f"Item list is large: {n} elements found via walrus operator!")
+
+# 4. Walrus Operator in loop accumulator
+ginti = 0
+jabtak (ginti := ginti + 1) <= 3:
+    dikhao(f"Loop iteration count: {ginti}")

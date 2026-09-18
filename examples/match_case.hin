@@ -1,0 +1,49 @@
+# Hinglish Structural Pattern Matching Example (milaao / vichaar)
+# Demonstrates literals, singletons, sequences, mappings, class patterns, guards, and wildcards
+
+varg Point:
+    __match_args__ = ("x", "y")
+    kaam __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+kaam handle_event(event):
+    milaao event:
+        vichaar 0:
+            dikhao("Number zero received")
+        vichaar sahi:
+            dikhao("Boolean True received")
+        vichaar shunya:
+            dikhao("None value received")
+        vichaar 200 | 201:
+            dikhao("HTTP Success Code")
+        vichaar [x, y] jaise coords agar x == y:
+            dikhao(f"Diagonal 2D coordinate: {coords}")
+        vichaar [head, *tail]:
+            dikhao(f"Sequence with head={head} and tail={tail}")
+        vichaar {"action": "greet", "name": name}:
+            dikhao(f"Hello, {name}!")
+        vichaar {"status": code, **metadata}:
+            dikhao(f"Status {code} with extra payload: {metadata}")
+        vichaar Point(0, 0):
+            dikhao("Point at origin (0, 0)")
+        vichaar Point(x, y):
+            dikhao(f"Point at ({x}, {y})")
+        vichaar other agar lambai(str(other)) > 5:
+            dikhao(f"Long value captured: {other}")
+        vichaar _:
+            dikhao("Wildcard default fallback")
+
+dikhao("=== Structural Pattern Matching ===")
+handle_event(0)
+handle_event(sahi)
+handle_event(shunya)
+handle_event(201)
+handle_event([5, 5])
+handle_event([10, 20, 30])
+handle_event({"action": "greet", "name": "Aarav"})
+handle_event({"status": 404, "path": "/api/users"})
+handle_event(Point(0, 0))
+handle_event(Point(10, 25))
+handle_event("unmatched_long_string")
+handle_event("xyz")

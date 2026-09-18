@@ -1,0 +1,33 @@
+# Hinglish Advanced Function Signatures Example
+# Demonstrates positional-only (/), annotations, defaults, *args, bare *, keyword-only, and **kwargs
+
+# 1. Positional-only parameters with annotations and defaults
+kaam jodo_guno(a: int, b: int = 2, /, factor: int = 1) -> int:
+    wapas (a + b) * factor
+
+# 2. Bare * introducing keyword-only arguments
+kaam configure_service(name: str, *, timeout: int = 30, retries: int = 3) -> str:
+    wapas f"Service '{name}': timeout={timeout}s, retries={retries}"
+
+# 3. Comprehensive signature mixing all parameter kinds
+kaam full_signature(pos1: int, pos2: int = 10, /, standard: int = 20, *varargs: int, kw1: str, kw2: str = "default", **kwargs) -> str:
+    dikhao(f"Pos-only: {pos1}, {pos2}")
+    dikhao(f"Standard: {pos1}, {standard}")
+    dikhao(f"Varargs: {varargs}")
+    dikhao(f"Keyword-only: {kw1}, {kw2}")
+    dikhao(f"Kwargs: {kwargs}")
+    wapas "success"
+
+dikhao("=== Advanced Functions Example ===")
+
+# Test positional-only
+res1 = jodo_guno(10, 5, 2)
+dikhao(f"jodo_guno(10, 5, 2) = {res1}")
+
+# Test bare star keyword-only
+svc = configure_service("DatabasePool", timeout=60, retries=5)
+dikhao(svc)
+
+# Test full signature
+ans = full_signature(1, 2, 3, 4, 5, kw1="hello", extra="custom", debug=sahi)
+dikhao(f"Status: {ans}")

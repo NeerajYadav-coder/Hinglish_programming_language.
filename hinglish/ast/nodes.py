@@ -88,21 +88,35 @@ class While(Statement):
 
 @dataclass
 class For(Statement):
-    """For loop: har <target> mein <iterable>: <body>"""
+    """For loop: har [intezaar] <target> mein <iterable>: <body>"""
 
     target: Expression = field(default_factory=Expression)
     iterable: Expression = field(default_factory=Expression)
     body: List[Statement] = field(default_factory=list)
+    is_async: bool = False
+
+
+@dataclass
+class Parameter(ASTNode):
+    """Function parameter metadata."""
+
+    name: str = ""
+    annotation: Optional[Expression] = None
+    default: Optional[Expression] = None
+    kind: str = "POSITIONAL_OR_KEYWORD"
 
 
 @dataclass
 class FunctionDefinition(Statement):
-    """Function definition: kaam <name>(<params>): <body>"""
+    """Function definition: [asamanantar] kaam <name>(<params>) [-> <ret>]: <body>"""
 
     name: str = ""
     params: List[str] = field(default_factory=list)
     body: List[Statement] = field(default_factory=list)
     decorators: List[Expression] = field(default_factory=list)
+    is_async: bool = False
+    parameters: List[Parameter] = field(default_factory=list)
+    returns: Optional[Expression] = None
 
 
 @dataclass
@@ -191,10 +205,11 @@ class WithItem(ASTNode):
 
 @dataclass
 class With(Statement):
-    """Context manager statement: saath <item1>, <item2>: <body>"""
+    """Context manager statement: saath [intezaar] <item1>, <item2>: <body>"""
 
     items: List[WithItem] = field(default_factory=list)
     body: List[Statement] = field(default_factory=list)
+    is_async: bool = False
 
 
 # -----------------------------------------------------------------------------
@@ -432,4 +447,139 @@ class YieldFrom(Expression):
     """Yield from expression or statement: upaj se <value>"""
 
     value: Expression = field(default_factory=Expression)
+
+
+# -----------------------------------------------------------------------------
+# Step 8: Async, Advanced Syntax, Annotations & Pattern Matching AST Nodes
+# -----------------------------------------------------------------------------
+
+
+@dataclass
+class AnnAssign(Statement):
+    """Annotated variable assignment: <target>: <annotation> [= <value>]"""
+
+    target: Expression = field(default_factory=Expression)
+    annotation: Expression = field(default_factory=Expression)
+    value: Optional[Expression] = None
+
+
+@dataclass
+class Await(Expression):
+    """Await expression: intezaar <value>"""
+
+    value: Expression = field(default_factory=Expression)
+
+
+@dataclass
+class AssignmentExpression(Expression):
+    """Walrus assignment expression: (<target> := <value>)"""
+
+    target: Expression = field(default_factory=Expression)
+    value: Expression = field(default_factory=Expression)
+
+
+@dataclass
+class Starred(Expression):
+    """Starred expression: *<value>"""
+
+    value: Expression = field(default_factory=Expression)
+
+
+@dataclass
+class DoubleStarred(Expression):
+    """Double-starred mapping unpack expression: **<value>"""
+
+    value: Expression = field(default_factory=Expression)
+
+
+@dataclass
+class MatchPattern(ASTNode):
+    """Base class for structural pattern matching patterns."""
+    pass
+
+
+@dataclass
+class MatchValue(MatchPattern):
+    """Literal or value pattern in match-case."""
+
+    value: Expression = field(default_factory=Expression)
+
+
+@dataclass
+class MatchSingleton(MatchPattern):
+    """Singleton pattern (sahi, galat, shunya / None)."""
+
+    value: Any = None
+
+
+@dataclass
+class MatchAs(MatchPattern):
+    """Capture pattern (x), wildcard (_), or 'pat jaise x' pattern."""
+
+    pattern: Optional[MatchPattern] = None
+    name: Optional[str] = None
+
+
+@dataclass
+class MatchOr(MatchPattern):
+    """OR pattern: pat1 | pat2 | pat3"""
+
+    patterns: List[MatchPattern] = field(default_factory=list)
+
+
+@dataclass
+class MatchSequence(MatchPattern):
+    """Sequence pattern: [pat1, pat2] or (pat1, pat2)"""
+
+    patterns: List[MatchPattern] = field(default_factory=list)
+
+
+@dataclass
+class MatchStar(MatchPattern):
+    """Starred capture pattern in sequence: *rest or *_"""
+
+    name: Optional[str] = None
+
+
+@dataclass
+class MatchMapping(MatchPattern):
+    """Mapping pattern: {key1: pat1, **rest}"""
+
+    keys: List[Expression] = field(default_factory=list)
+    patterns: List[MatchPattern] = field(default_factory=list)
+    rest: Optional[str] = None
+
+
+@dataclass
+class MatchClass(MatchPattern):
+    """Class pattern: Cls(p1, p2, attr=pat)"""
+
+    cls: Expression = field(default_factory=Expression)
+    patterns: List[MatchPattern] = field(default_factory=list)
+    kwd_attrs: List[str] = field(default_factory=list)
+    kwd_patterns: List[MatchPattern] = field(default_factory=list)
+
+
+@dataclass
+class MatchCase(ASTNode):
+    """Case branch in match statement: vichaar <pattern> [agar <guard>]: <body>"""
+
+    pattern: MatchPattern = field(default_factory=MatchPattern)
+    guard: Optional[Expression] = None
+    body: List[Statement] = field(default_factory=list)
+
+
+@dataclass
+class Match(Statement):
+    """Pattern matching statement: milaao <subject>: <cases>"""
+
+    subject: Expression = field(default_factory=Expression)
+    cases: List[MatchCase] = field(default_factory=list)
+
+
+# Type Aliases for convenient semantic identification
+AsyncFunctionDefinition = FunctionDefinition
+AsyncFor = For
+AsyncWith = With
+
 

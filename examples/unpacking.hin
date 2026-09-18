@@ -1,0 +1,39 @@
+# Hinglish Advanced Unpacking Example
+# Demonstrates tuple targets, extended unpacking, literal unpacking, and call unpacking
+
+dikhao("=== Advanced Unpacking in Hinglish ===")
+
+# 1. Multiple target assignment & tuple unpacking
+x, y, z = 10, 20, 30
+dikhao(f"x={x}, y={y}, z={z}")
+
+# 2. Extended unpacking with middle star
+pehla, *beech, aakhri = [1, 2, 3, 4, 5]
+dikhao(f"pehla={pehla}, beech={beech}, aakhri={aakhri}")
+
+# 3. Extended unpacking with leading star
+*shuru_ke, antim = (100, 200, 300)
+dikhao(f"shuru_ke={shuru_ke}, antim={antim}")
+
+# 4. List literal unpacking with *
+madhya_suchi = [2, 3, 4]
+poori_suchi = [1, *madhya_suchi, 5, 6]
+dikhao(f"Unpacked list: {poori_suchi}")
+
+# 5. Set literal unpacking with *
+set_a = {1, 2}
+set_b = {*set_a, 3, 4}
+dikhao(f"Unpacked set elements count: {lambai(set_b)}")
+
+# 6. Dictionary literal unpacking with **
+def_config = {"theme": "dark", "timeout": 30}
+user_config = {**def_config, "timeout": 60, "user": "neeraj"}
+dikhao(f"Merged config dictionary: {user_config}")
+
+# 7. Function call unpacking with * and **
+kaam profile(naam, shehar, umar=18, status="active"):
+    dikhao(f"Profile -> Naam: {naam}, Shehar: {shehar}, Umar: {umar}, Status: {status}")
+
+pos_args = ["Priya", "Mumbai"]
+kw_args = {"umar": 24, "status": "verified"}
+profile(*pos_args, **kw_args)

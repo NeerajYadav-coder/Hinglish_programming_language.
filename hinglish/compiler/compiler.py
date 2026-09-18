@@ -8,9 +8,15 @@ import ast
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..ast.nodes import (
+    AnnAssign,
     Assignment,
+    AssignmentExpression,
     ASTNode,
+    AsyncFor,
+    AsyncFunctionDefinition,
+    AsyncWith,
     AttributeAccess,
+    Await,
     BinaryOperation,
     Boolean,
     BooleanOperation,
@@ -22,6 +28,7 @@ from ..ast.nodes import (
     Continue,
     DictComprehension,
     DictLiteral,
+    DoubleStarred,
     ElifClause,
     ExceptHandler,
     Expression,
@@ -42,7 +49,19 @@ from ..ast.nodes import (
     LambdaExpression,
     ListComprehension,
     ListLiteral,
+    Match,
+    MatchAs,
+    MatchCase,
+    MatchClass,
+    MatchMapping,
+    MatchOr,
+    MatchPattern,
+    MatchSequence,
+    MatchSingleton,
+    MatchStar,
+    MatchValue,
     NoneLiteral,
+    Parameter,
     Pass,
     Program,
     Raise,
@@ -50,6 +69,7 @@ from ..ast.nodes import (
     SetComprehension,
     SetLiteral,
     Slice,
+    Starred,
     Statement,
     String,
     Try,
@@ -182,7 +202,8 @@ class HinglishCompiler:
         if isinstance(stmt, For):
             target_code = self.compile_expression(stmt.target)
             iter_code = self.compile_expression(stmt.iterable)
-            lines = [(f"{indent}for {target_code} in {iter_code}:", hin_line)]
+            for_kw = "async for" if getattr(stmt, "is_async", False) else "for"
+            lines = [(f"{indent}{for_kw} {target_code} in {iter_code}:", hin_line)]
             lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
             return lines
 
@@ -192,8 +213,13 @@ class HinglishCompiler:
                 for dec in stmt.decorators:
                     dec_hin = dec.start_pos.line if dec.start_pos else hin_line
                     lines.append((f"{indent}@{self.compile_expression(dec)}", dec_hin))
-            params_str = ", ".join(stmt.params)
-            lines.append((f"{indent}def {stmt.name}({params_str}):", hin_line))
+            def_kw = "async def" if getattr(stmt, "is_async", False) else "def"
+            if stmt.parameters:
+                params_str = self._compile_parameters(stmt.parameters)
+            else:
+                params_str = ", ".join(stmt.params)
+            ret_str = f" -> {self.compile_expression(stmt.returns)}" if stmt.returns else ""
+            lines.append((f"{indent}{def_kw} {stmt.name}({params_str}){ret_str}:", hin_line))
             lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
             return lines
 
@@ -249,8 +275,28 @@ class HinglishCompiler:
                     items_parts.append(f"{c_code} as {v_code}")
                 else:
                     items_parts.append(c_code)
-            lines = [(f"{indent}with {', '.join(items_parts)}:", hin_line)]
+            with_kw = "async with" if getattr(stmt, "is_async", False) else "with"
+            lines = [(f"{indent}{with_kw} {', '.join(items_parts)}:", hin_line)]
             lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
+            return lines
+
+        if isinstance(stmt, AnnAssign):
+            target_code = self.compile_expression(stmt.target)
+            ann_code = self.compile_expression(stmt.annotation)
+            if stmt.value is not None:
+                val_code = self.compile_expression(stmt.value)
+                return [(f"{indent}{target_code}: {ann_code} = {val_code}", hin_line)]
+            return [(f"{indent}{target_code}: {ann_code}", hin_line)]
+
+        if isinstance(stmt, Match):
+            subj_code = self.compile_expression(stmt.subject)
+            lines = [(f"{indent}match {subj_code}:", hin_line)]
+            for case in stmt.cases:
+                c_hin = case.start_pos.line if case.start_pos else hin_line
+                pat_code = self.compile_pattern(case.pattern)
+                guard_code = f" if {self.compile_expression(case.guard)}" if case.guard is not None else ""
+                lines.append((f"{indent}    case {pat_code}{guard_code}:", c_hin))
+                lines.extend(self._compile_body_lines(case.body, indent_level + 2, c_hin))
             return lines
 
         if isinstance(stmt, Return):
@@ -356,6 +402,94 @@ class HinglishCompiler:
                 parts.append(f"if {cond_str}")
         return " ".join(parts)
 
+    def _compile_parameters(self, parameters: List[Parameter]) -> str:
+        """Compiles a list of Parameter AST nodes into a Python parameter list."""
+        parts: List[str] = []
+        pos_only_count = sum(1 for p in parameters if p.kind == "POSITIONAL_ONLY")
+        has_var_positional = any(p.kind == "VAR_POSITIONAL" for p in parameters)
+        bare_star_emitted = False
+        pos_only_seen = 0
+
+        for p in parameters:
+            if p.kind == "KEYWORD_ONLY" and not has_var_positional and not bare_star_emitted:
+                parts.append("*")
+                bare_star_emitted = True
+
+            if p.kind == "VAR_POSITIONAL":
+                p_str = f"*{p.name}"
+                if p.annotation is not None:
+                    p_str += f": {self.compile_expression(p.annotation)}"
+            elif p.kind == "VAR_KEYWORD":
+                p_str = f"**{p.name}"
+                if p.annotation is not None:
+                    p_str += f": {self.compile_expression(p.annotation)}"
+            else:
+                p_str = p.name
+                if p.annotation is not None:
+                    p_str += f": {self.compile_expression(p.annotation)}"
+                if p.default is not None:
+                    p_str += f"={self.compile_expression(p.default)}"
+
+            parts.append(p_str)
+
+            if p.kind == "POSITIONAL_ONLY":
+                pos_only_seen += 1
+                if pos_only_seen == pos_only_count:
+                    parts.append("/")
+
+        return ", ".join(parts)
+
+    def compile_pattern(self, pattern: MatchPattern) -> str:
+        """Compiles a MatchPattern AST node into valid Python 3.10+ match pattern syntax."""
+        if isinstance(pattern, MatchValue):
+            return self.compile_expression(pattern.value)
+
+        if isinstance(pattern, MatchSingleton):
+            return repr(pattern.value)
+
+        if isinstance(pattern, MatchStar):
+            if pattern.name:
+                return f"*{pattern.name}"
+            return "*_"
+
+        if isinstance(pattern, MatchAs):
+            if pattern.pattern is None:
+                return pattern.name if pattern.name is not None else "_"
+            pat_str = self.compile_pattern(pattern.pattern)
+            if pattern.name is not None:
+                return f"{pat_str} as {pattern.name}"
+            return pat_str
+
+        if isinstance(pattern, MatchOr):
+            parts = [self.compile_pattern(p) for p in pattern.patterns]
+            return " | ".join(parts)
+
+        if isinstance(pattern, MatchSequence):
+            parts = [self.compile_pattern(p) for p in pattern.patterns]
+            return f"[{', '.join(parts)}]"
+
+        if isinstance(pattern, MatchMapping):
+            parts = []
+            for k, p in zip(pattern.keys, pattern.patterns):
+                k_str = self.compile_expression(k)
+                p_str = self.compile_pattern(p)
+                parts.append(f"{k_str}: {p_str}")
+            if pattern.rest:
+                parts.append(f"**{pattern.rest}")
+            return f"{{{', '.join(parts)}}}"
+
+        if isinstance(pattern, MatchClass):
+            cls_str = self.compile_expression(pattern.cls)
+            pos_args = [self.compile_pattern(p) for p in pattern.patterns]
+            kwd_args = [
+                f"{attr}={self.compile_pattern(p)}"
+                for attr, p in zip(pattern.kwd_attrs, pattern.kwd_patterns)
+            ]
+            all_args = pos_args + kwd_args
+            return f"{cls_str}({', '.join(all_args)})"
+
+        raise HinglishCompilerError(f"Unsupported match pattern node '{type(pattern).__name__}'")
+
     # -------------------------------------------------------------------------
     # Expression Compilation with Precedence Handling
     # -------------------------------------------------------------------------
@@ -422,10 +556,15 @@ class HinglishCompiler:
             return f"[{', '.join(elements)}]"
 
         if isinstance(expr, DictLiteral):
-            items = [
-                f"{self.compile_expression(k)}: {self.compile_expression(v)}"
-                for k, v in zip(expr.keys, expr.values)
-            ]
+            items = []
+            for k, v in zip(expr.keys, expr.values):
+                if k is None or isinstance(k, NoneLiteral) or isinstance(v, DoubleStarred):
+                    if isinstance(v, DoubleStarred):
+                        items.append(f"**{self.compile_expression(v.value)}")
+                    else:
+                        items.append(f"**{self.compile_expression(v)}")
+                else:
+                    items.append(f"{self.compile_expression(k)}: {self.compile_expression(v)}")
             return f"{{{', '.join(items)}}}"
 
         if isinstance(expr, TupleLiteral):
@@ -486,6 +625,25 @@ class HinglishCompiler:
                 return f"({res})"
             return res
 
+        if isinstance(expr, Await):
+            current_prec = self.PRECEDENCE.get("unary", 11)
+            val_str = self.compile_expression(expr.value, parent_prec=current_prec)
+            res = f"await {val_str}"
+            if current_prec < parent_prec:
+                return f"({res})"
+            return res
+
+        if isinstance(expr, AssignmentExpression):
+            target_str = self.compile_expression(expr.target)
+            val_str = self.compile_expression(expr.value)
+            return f"({target_str} := {val_str})"
+
+        if isinstance(expr, Starred):
+            return f"*{self.compile_expression(expr.value)}"
+
+        if isinstance(expr, DoubleStarred):
+            return f"**{self.compile_expression(expr.value)}"
+
         # 3. Binary Operations
         if isinstance(expr, BinaryOperation):
             current_prec = self.PRECEDENCE.get(expr.op, 0)
@@ -535,10 +693,11 @@ class HinglishCompiler:
         # 7. Function Call
         if isinstance(expr, FunctionCall):
             func_str = self.compile_expression(expr.func, parent_prec=self.PRECEDENCE["call"])
-            args_list = [self.compile_expression(a) for a in expr.args]
-            for k, v in expr.keywords.items():
-                args_list.append(f"{k}={self.compile_expression(v)}")
-            return f"{func_str}({', '.join(args_list)})"
+            pos_args = [self.compile_expression(a) for a in expr.args if not isinstance(a, DoubleStarred)]
+            kw_args = [f"{k}={self.compile_expression(v)}" for k, v in expr.keywords.items()]
+            star_star_args = [self.compile_expression(a) for a in expr.args if isinstance(a, DoubleStarred)]
+            all_args = pos_args + kw_args + star_star_args
+            return f"{func_str}({', '.join(all_args)})"
 
         # 8. Attribute Access
         if isinstance(expr, AttributeAccess):

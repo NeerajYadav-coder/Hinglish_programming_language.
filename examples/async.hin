@@ -1,0 +1,52 @@
+# Hinglish Asynchronous Programming Example: async, await, async for, async with
+
+laao asyncio
+
+# 1. Asynchronous Function (asamanantar kaam) and await (intezaar)
+asamanantar kaam fetch_data(delay, value):
+    intezaar asyncio.sleep(delay)
+    wapas f"Data: {value}"
+
+# 2. Async Context Manager & async with (saath intezaar)
+varg AsyncConnection:
+    kaam __init__(self, host):
+        self.host = host
+
+    asamanantar kaam __aenter__(self):
+        intezaar asyncio.sleep(0.001)
+        dikhao(f"Connected to {self.host}")
+        wapas self
+
+    asamanantar kaam __aexit__(self, exc_type, exc, tb):
+        intezaar asyncio.sleep(0.001)
+        dikhao(f"Disconnected from {self.host}")
+
+# 3. Async Generator & async for (har intezaar)
+asamanantar kaam async_stream(limit):
+    sankhya = 1
+    jabtak sankhya <= limit:
+        intezaar asyncio.sleep(0.001)
+        upaj sankhya
+        sankhya = sankhya + 1
+
+# 4. Main async workflow
+asamanantar kaam main():
+    dikhao("=== Hinglish Async Workflow ===")
+
+    # Await simple coroutine
+    msg = intezaar fetch_data(0.001, "Namaste Async")
+    dikhao(msg)
+
+    # Async with statement
+    saath intezaar AsyncConnection("db.server.local") jaise conn:
+        dikhao(f"Active connection on: {conn.host}")
+
+    # Async for loop
+    dikhao("Streaming numbers asynchronously:")
+    har intezaar item mein async_stream(3):
+        dikhao(f"  Received: {item}")
+
+    dikhao("Async workflow completed successfully!")
+
+# Run via Python's standard asyncio runtime
+asyncio.run(main())

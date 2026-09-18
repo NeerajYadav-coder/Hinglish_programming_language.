@@ -7,9 +7,15 @@ Hinglish Abstract Syntax Tree (AST).
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..ast.nodes import (
+    AnnAssign,
     Assignment,
+    AssignmentExpression,
     ASTNode,
+    AsyncFor,
+    AsyncFunctionDefinition,
+    AsyncWith,
     AttributeAccess,
+    Await,
     BinaryOperation,
     Boolean,
     BooleanOperation,
@@ -21,6 +27,7 @@ from ..ast.nodes import (
     Continue,
     DictComprehension,
     DictLiteral,
+    DoubleStarred,
     ElifClause,
     ExceptHandler,
     Expression,
@@ -41,7 +48,19 @@ from ..ast.nodes import (
     LambdaExpression,
     ListComprehension,
     ListLiteral,
+    Match,
+    MatchAs,
+    MatchCase,
+    MatchClass,
+    MatchMapping,
+    MatchOr,
+    MatchPattern,
+    MatchSequence,
+    MatchSingleton,
+    MatchStar,
+    MatchValue,
     NoneLiteral,
+    Parameter,
     Pass,
     Program,
     Raise,
@@ -49,6 +68,7 @@ from ..ast.nodes import (
     SetComprehension,
     SetLiteral,
     Slice,
+    Starred,
     Statement,
     String,
     Try,
@@ -222,6 +242,10 @@ class HinglishParser:
             return self.parse_raise()
         if py_kw == "with":
             return self.parse_with()
+        if py_kw == "async":
+            return self.parse_async_statement()
+        if py_kw == "match":
+            return self.parse_match()
         if tok.type == TokenType.AT:
             return self.parse_decorated_definition()
         if py_kw == "yield":
@@ -329,9 +353,14 @@ class HinglishParser:
         )
 
     def parse_for(self) -> For:
-        """Parses a for loop: har <target> mein <iterable>: <body>."""
+        """Parses a for loop: har [intezaar] <target> mein <iterable>: <body>."""
         start_tok = self.advance()  # Consume 'har'
         start_pos = start_tok.start_pos
+        is_async = False
+
+        if self.check_py_keyword("await"):
+            self.advance()  # Consume 'intezaar'
+            is_async = True
 
         if self.check(TokenType.COLON):
             raise self._syntax_error("Expected loop variable after 'har'", self.peek())
@@ -352,35 +381,164 @@ class HinglishParser:
             target=target,
             iterable=iterable,
             body=body,
+            is_async=is_async,
             start_pos=start_pos,
             end_pos=end_pos,
         )
 
+    def parse_parameters(self) -> Tuple[List[str], List[Parameter]]:
+        """Parses modern Python-compatible function parameter signatures.
+
+        Supports positional-only ('/'), annotations (': type'), defaults ('= val'),
+        var-positional ('*args'), bare ('*'), keyword-only, and var-keyword ('**kwargs').
+        """
+        params_str_list: List[str] = []
+        parameters: List[Parameter] = []
+        seen_slash = False
+        seen_star = False
+        seen_kwarg = False
+        seen_default = False
+
+        while not self.check(TokenType.RPAREN) and not self.is_at_end():
+            # 1. Positional-only separator: '/'
+            if self.match(TokenType.SLASH):
+                if seen_slash:
+                    raise self._syntax_error("'/' may only appear once in parameter list", self.peek())
+                if seen_star:
+                    raise self._syntax_error("'/' must be ahead of '*' in parameter list", self.peek())
+                if not parameters:
+                    raise self._syntax_error("'/' must follow at least one parameter", self.peek())
+                seen_slash = True
+                for p in parameters:
+                    if p.kind == "POSITIONAL_OR_KEYWORD":
+                        p.kind = "POSITIONAL_ONLY"
+
+                self.match(TokenType.COMMA)
+                continue
+
+            # 2. Var-positional '*args' or bare '*'
+            if self.match(TokenType.STAR):
+                if seen_star:
+                    raise self._syntax_error("Multiple '*' not allowed in parameter list", self.peek())
+                seen_star = True
+
+                # Bare '*'
+                if self.check(TokenType.COMMA) or self.check(TokenType.RPAREN):
+                    self.match(TokenType.COMMA)
+                    continue
+
+                arg_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name after '*'")
+                arg_name = str(arg_tok.value)
+                params_str_list.append(arg_name)
+
+                annotation = None
+                if self.match(TokenType.COLON):
+                    annotation = self.parse_expression()
+
+                parameters.append(
+                    Parameter(
+                        name=arg_name,
+                        annotation=annotation,
+                        kind="VAR_POSITIONAL",
+                        start_pos=arg_tok.start_pos,
+                        end_pos=annotation.end_pos if annotation else arg_tok.end_pos,
+                    )
+                )
+                self.match(TokenType.COMMA)
+                continue
+
+            # 3. Var-keyword '**kwargs'
+            if self.match(TokenType.STAR_STAR):
+                if seen_kwarg:
+                    raise self._syntax_error("Multiple '**' not allowed in parameter list", self.peek())
+                seen_kwarg = True
+
+                kw_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name after '**'")
+                kw_name = str(kw_tok.value)
+                params_str_list.append(kw_name)
+
+                annotation = None
+                if self.match(TokenType.COLON):
+                    annotation = self.parse_expression()
+
+                parameters.append(
+                    Parameter(
+                        name=kw_name,
+                        annotation=annotation,
+                        kind="VAR_KEYWORD",
+                        start_pos=kw_tok.start_pos,
+                        end_pos=annotation.end_pos if annotation else kw_tok.end_pos,
+                    )
+                )
+
+                if self.match(TokenType.COMMA):
+                    if not self.check(TokenType.RPAREN):
+                        raise self._syntax_error("No parameters may follow '**kwargs'", self.peek())
+                continue
+
+            # 4. Standard parameter
+            if seen_kwarg:
+                raise self._syntax_error("No parameters may follow '**kwargs'", self.peek())
+
+            name_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name")
+            name = str(name_tok.value)
+            params_str_list.append(name)
+
+            annotation = None
+            if self.match(TokenType.COLON):
+                annotation = self.parse_expression()
+
+            default = None
+            if self.match(TokenType.ASSIGN):
+                default = self.parse_expression()
+
+            if default is not None:
+                seen_default = True
+            elif not seen_star and seen_default:
+                raise self._syntax_error(
+                    f"Non-default argument '{name}' follows default argument", name_tok
+                )
+
+            kind = "KEYWORD_ONLY" if seen_star else "POSITIONAL_OR_KEYWORD"
+            parameters.append(
+                Parameter(
+                    name=name,
+                    annotation=annotation,
+                    default=default,
+                    kind=kind,
+                    start_pos=name_tok.start_pos,
+                    end_pos=default.end_pos if default else (annotation.end_pos if annotation else name_tok.end_pos),
+                )
+            )
+
+            if not self.match(TokenType.COMMA):
+                break
+
+        return params_str_list, parameters
+
     def parse_function_definition(self) -> FunctionDefinition:
-        """Parses a function definition: kaam <name>(<params>): <body>."""
+        """Parses a function definition: kaam <name>(<params>) [-> <ret>]: <body>."""
         start_tok = self.advance()  # Consume 'kaam'
         start_pos = start_tok.start_pos
 
         name_tok = self.expect(TokenType.IDENTIFIER, "Expected function name after 'kaam'")
         self.expect(TokenType.LPAREN, "Expected '(' after function name")
 
-        params: List[str] = []
-        if not self.check(TokenType.RPAREN):
-            param_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name")
-            params.append(str(param_tok.value))
-            while self.match(TokenType.COMMA):
-                if self.check(TokenType.RPAREN):
-                    break
-                p_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name after ','")
-                params.append(str(p_tok.value))
-
+        params, parameters = self.parse_parameters()
         self.expect(TokenType.RPAREN, "Expected ')' after parameter list")
+
+        returns: Optional[Expression] = None
+        if self.match(TokenType.ARROW):
+            returns = self.parse_expression()
+
         body = self.parse_block(f"function '{name_tok.value}'")
 
         end_pos = body[-1].end_pos if body else start_pos
         return FunctionDefinition(
             name=str(name_tok.value),
             params=params,
+            parameters=parameters,
+            returns=returns,
             body=body,
             start_pos=start_pos,
             end_pos=end_pos,
@@ -574,9 +732,14 @@ class HinglishParser:
         return Raise(exc=exc, start_pos=start_pos, end_pos=end_pos)
 
     def parse_with(self) -> With:
-        """Parses a context manager statement: saath <item1>, <item2>: <body>"""
+        """Parses a context manager statement: saath [intezaar] <item1>, <item2>: <body>"""
         start_tok = self.advance()  # Consume 'saath'
         start_pos = start_tok.start_pos
+        is_async = False
+
+        if self.check_py_keyword("await"):
+            self.advance()  # Consume 'intezaar'
+            is_async = True
 
         items: List[WithItem] = []
         while True:
@@ -603,7 +766,21 @@ class HinglishParser:
 
         body = self.parse_block("saath")
         end_pos = body[-1].end_pos if body else start_pos
-        return With(items=items, body=body, start_pos=start_pos, end_pos=end_pos)
+        return With(items=items, body=body, is_async=is_async, start_pos=start_pos, end_pos=end_pos)
+
+    def parse_async_statement(self) -> Statement:
+        """Parses an async definition: asamanantar kaam <name>(<params>): <body>."""
+        start_tok = self.advance()  # Consume 'asamanantar'
+        start_pos = start_tok.start_pos
+
+        if not self.check_py_keyword("def"):
+            tok = self.peek()
+            raise self._syntax_error("Expected 'kaam' after 'asamanantar'", tok)
+
+        func = self.parse_function_definition()
+        func.is_async = True
+        func.start_pos = start_pos
+        return func
 
     def parse_decorated_definition(self) -> Statement:
         """Parses @decorator lines followed by a function or class definition."""
@@ -624,6 +801,13 @@ class HinglishParser:
             func = self.parse_function_definition()
             func.decorators = decorators
             func.start_pos = start_pos
+            return func
+
+        if py_kw == "async":
+            func = self.parse_async_statement()
+            if isinstance(func, FunctionDefinition):
+                func.decorators = decorators
+                func.start_pos = start_pos
             return func
 
         if py_kw == "class":
@@ -714,11 +898,71 @@ class HinglishParser:
             end_pos=body.end_pos,
         )
 
-    def parse_assignment_or_expression_statement(self) -> Statement:
-        """Parses an assignment statement or an expression statement."""
-        expr = self.parse_expression()
+    def parse_starred_or_expression(self) -> Expression:
+        """Parses *expr (Starred) or a regular expression."""
+        if self.match(TokenType.STAR):
+            star_pos = self.tokens[self.cursor - 1].start_pos
+            val = self.parse_expression()
+            return Starred(value=val, start_pos=star_pos, end_pos=val.end_pos)
+        return self.parse_expression()
 
-        # Check for assignment operators
+    def parse_expression_or_tuple(self, allow_starred: bool = False) -> Expression:
+        """Parses an expression or a comma-separated tuple of expressions."""
+        first = self.parse_starred_or_expression() if allow_starred else self.parse_expression()
+        if not self.match(TokenType.COMMA):
+            return first
+
+        elements = [first]
+        while not self.is_at_end():
+            if self.peek().type in (
+                TokenType.ASSIGN,
+                TokenType.PLUS_ASSIGN,
+                TokenType.MINUS_ASSIGN,
+                TokenType.STAR_ASSIGN,
+                TokenType.SLASH_ASSIGN,
+                TokenType.DOUBLE_SLASH_ASSIGN,
+                TokenType.PERCENT_ASSIGN,
+                TokenType.STAR_STAR_ASSIGN,
+                TokenType.AMPERSAND_ASSIGN,
+                TokenType.PIPE_ASSIGN,
+                TokenType.CARET_ASSIGN,
+                TokenType.LSHIFT_ASSIGN,
+                TokenType.RSHIFT_ASSIGN,
+                TokenType.NEWLINE,
+                TokenType.EOF,
+                TokenType.SEMICOLON,
+                TokenType.DEDENT,
+            ):
+                break
+            elt = self.parse_starred_or_expression() if allow_starred else self.parse_expression()
+            elements.append(elt)
+            if not self.match(TokenType.COMMA):
+                break
+
+        end_pos = elements[-1].end_pos if elements else first.end_pos
+        return TupleLiteral(elements=elements, start_pos=first.start_pos, end_pos=end_pos)
+
+    def parse_assignment_or_expression_statement(self) -> Statement:
+        """Parses an assignment statement, annotated assignment, or expression statement."""
+        expr = self.parse_expression_or_tuple(allow_starred=True)
+
+        # 1. Annotated assignment: target: annotation [= value]
+        if self.match(TokenType.COLON):
+            annotation = self.parse_expression()
+            value = None
+            if self.match(TokenType.ASSIGN):
+                value = self.parse_expression_or_tuple()
+            self.expect_statement_terminator()
+            end_pos = value.end_pos if value else annotation.end_pos
+            return AnnAssign(
+                target=expr,
+                annotation=annotation,
+                value=value,
+                start_pos=expr.start_pos,
+                end_pos=end_pos,
+            )
+
+        # 2. Assignment operators
         assign_tokens = {
             TokenType.ASSIGN: "=",
             TokenType.PLUS_ASSIGN: "+=",
@@ -738,7 +982,7 @@ class HinglishParser:
         if self.peek().type in assign_tokens:
             op_tok = self.advance()
             op_str = assign_tokens[op_tok.type]
-            value = self.parse_expression()
+            value = self.parse_expression_or_tuple()
             self.expect_statement_terminator()
             return Assignment(
                 target=expr,
@@ -773,7 +1017,16 @@ class HinglishParser:
         """Top-level entry for parsing expressions."""
         if self.check_py_keyword("lambda"):
             return self.parse_lambda()
-        return self.parse_boolean_or()
+        expr = self.parse_boolean_or()
+        if self.match(TokenType.WALRUS):
+            value = self.parse_expression()
+            return AssignmentExpression(
+                target=expr,
+                value=value,
+                start_pos=expr.start_pos,
+                end_pos=value.end_pos,
+            )
+        return expr
 
     def parse_boolean_or(self) -> Expression:
         """Parses boolean OR: expr ('ya' / 'or' expr)*."""
@@ -957,7 +1210,11 @@ class HinglishParser:
         return left
 
     def parse_unary(self) -> Expression:
-        """Parses unary operators: +, -, ~."""
+        """Parses unary operators: +, -, ~, await (intezaar)."""
+        if self.check_py_keyword("await"):
+            tok = self.advance()
+            operand = self.parse_unary()
+            return Await(value=operand, start_pos=tok.start_pos, end_pos=operand.end_pos)
         if self.match(TokenType.PLUS):
             tok = self.tokens[self.cursor - 1]
             operand = self.parse_unary()
@@ -1003,6 +1260,16 @@ class HinglishParser:
                             self.advance()          # '='
                             v_expr = self.parse_expression()
                             keywords[str(k_tok.value)] = v_expr
+                        elif self.match(TokenType.STAR):
+                            # *args
+                            star_pos = self.tokens[self.cursor - 1].start_pos
+                            val = self.parse_expression()
+                            args.append(Starred(value=val, start_pos=star_pos, end_pos=val.end_pos))
+                        elif self.match(TokenType.STAR_STAR):
+                            # **kwargs
+                            star_pos = self.tokens[self.cursor - 1].start_pos
+                            val = self.parse_expression()
+                            args.append(DoubleStarred(value=val, start_pos=star_pos, end_pos=val.end_pos))
                         else:
                             args.append(self.parse_expression())
 
@@ -1149,7 +1416,7 @@ class HinglishParser:
             if self.match(TokenType.RBRACKET):
                 return ListLiteral(elements=[], start_pos=start_pos, end_pos=self.tokens[self.cursor - 1].end_pos)
 
-            first = self.parse_expression()
+            first = self.parse_starred_or_expression()
 
             # List comprehension: [elt har x mein iter [agar cond]*]
             if self.check_py_keyword("for"):
@@ -1166,7 +1433,7 @@ class HinglishParser:
             while self.match(TokenType.COMMA):
                 if self.check(TokenType.RBRACKET):
                     break
-                elements.append(self.parse_expression())
+                elements.append(self.parse_starred_or_expression())
 
             rbracket = self.expect(TokenType.RBRACKET, "Expected ']' after list elements")
             return ListLiteral(elements=elements, start_pos=start_pos, end_pos=rbracket.end_pos)
@@ -1178,7 +1445,29 @@ class HinglishParser:
                 # Empty dict {}
                 return DictLiteral(keys=[], values=[], start_pos=start_pos, end_pos=self.tokens[self.cursor - 1].end_pos)
 
-            first = self.parse_expression()
+            # Check for dict unpacking as first element: {**dict_a, ...}
+            if self.match(TokenType.STAR_STAR):
+                first_val = self.parse_expression()
+                keys = [NoneLiteral(start_pos=start_pos, end_pos=first_val.end_pos)]
+                values = [DoubleStarred(value=first_val, start_pos=start_pos, end_pos=first_val.end_pos)]
+                while self.match(TokenType.COMMA):
+                    if self.check(TokenType.RBRACE):
+                        break
+                    if self.match(TokenType.STAR_STAR):
+                        ds_pos = self.tokens[self.cursor - 1].start_pos
+                        v = self.parse_expression()
+                        keys.append(NoneLiteral(start_pos=ds_pos, end_pos=v.end_pos))
+                        values.append(DoubleStarred(value=v, start_pos=ds_pos, end_pos=v.end_pos))
+                    else:
+                        k = self.parse_expression()
+                        self.expect(TokenType.COLON, "Expected ':' after dictionary key")
+                        v = self.parse_expression()
+                        keys.append(k)
+                        values.append(v)
+                rbrace = self.expect(TokenType.RBRACE, "Expected '}' after dictionary elements")
+                return DictLiteral(keys=keys, values=values, start_pos=start_pos, end_pos=rbrace.end_pos)
+
+            first = self.parse_starred_or_expression()
 
             # Case A: Dictionary or Dict Comprehension
             if self.match(TokenType.COLON):
@@ -1198,11 +1487,17 @@ class HinglishParser:
                 while self.match(TokenType.COMMA):
                     if self.check(TokenType.RBRACE):
                         break
-                    k = self.parse_expression()
-                    self.expect(TokenType.COLON, "Expected ':' after dictionary key")
-                    v = self.parse_expression()
-                    keys.append(k)
-                    values.append(v)
+                    if self.match(TokenType.STAR_STAR):
+                        ds_pos = self.tokens[self.cursor - 1].start_pos
+                        v = self.parse_expression()
+                        keys.append(NoneLiteral(start_pos=ds_pos, end_pos=v.end_pos))
+                        values.append(DoubleStarred(value=v, start_pos=ds_pos, end_pos=v.end_pos))
+                    else:
+                        k = self.parse_expression()
+                        self.expect(TokenType.COLON, "Expected ':' after dictionary key")
+                        v = self.parse_expression()
+                        keys.append(k)
+                        values.append(v)
                 rbrace = self.expect(TokenType.RBRACE, "Expected '}' after dictionary elements")
                 return DictLiteral(keys=keys, values=values, start_pos=start_pos, end_pos=rbrace.end_pos)
 
@@ -1222,7 +1517,7 @@ class HinglishParser:
             while self.match(TokenType.COMMA):
                 if self.check(TokenType.RBRACE):
                     break
-                set_elements.append(self.parse_expression())
+                set_elements.append(self.parse_starred_or_expression())
             rbrace = self.expect(TokenType.RBRACE, "Expected '}' after set elements")
             return SetLiteral(elements=set_elements, start_pos=start_pos, end_pos=rbrace.end_pos)
 
@@ -1430,3 +1725,287 @@ class HinglishParser:
             )
 
         return JoinedStr(parts=parts, start_pos=tok.start_pos, end_pos=tok.end_pos)
+
+    # -------------------------------------------------------------------------
+    # Pattern Matching (match / case) Parsing
+    # -------------------------------------------------------------------------
+
+    def parse_match(self) -> Match:
+        """Parses a pattern matching statement: milaao <subject>: <cases>"""
+        start_tok = self.advance()  # Consume 'milaao' / 'milao'
+        start_pos = start_tok.start_pos
+
+        subject = self.parse_expression()
+        self.expect(TokenType.COLON, "Expected ':' after match subject")
+        self.expect(TokenType.NEWLINE, "Expected newline after ':' in match")
+        self.skip_newlines()
+        self.expect(TokenType.INDENT, "Expected indented block of cases for match")
+        self.skip_newlines()
+
+        cases: List[MatchCase] = []
+        while not self.is_at_end() and not self.check(TokenType.DEDENT):
+            case_node = self.parse_match_case()
+            cases.append(case_node)
+            self.skip_newlines()
+
+        self.expect(TokenType.DEDENT, "Expected dedent after match block")
+        end_pos = cases[-1].end_pos if cases else start_pos
+        return Match(subject=subject, cases=cases, start_pos=start_pos, end_pos=end_pos)
+
+    def parse_match_case(self) -> MatchCase:
+        """Parses a single case branch: vichaar <pattern> [agar <guard>]: <body>"""
+        self.skip_newlines()
+        tok = self.peek()
+        if not self.check_py_keyword("case"):
+            raise self._syntax_error("Expected 'vichaar' or 'sthiti' to start case branch", tok)
+        case_tok = self.advance()  # Consume 'vichaar'
+        start_pos = case_tok.start_pos
+
+        pattern = self.parse_pattern()
+
+        guard: Optional[Expression] = None
+        if self.check_py_keyword("if"):
+            self.advance()  # Consume 'agar'
+            guard = self.parse_expression()
+
+        body = self.parse_block("case")
+        end_pos = body[-1].end_pos if body else start_pos
+        return MatchCase(
+            pattern=pattern,
+            guard=guard,
+            body=body,
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
+
+    def parse_pattern(self) -> MatchPattern:
+        """Parses a pattern, supporting OR ('|') combinations."""
+        first = self.parse_pattern_as()
+        if not self.match(TokenType.PIPE):
+            return first
+
+        patterns = [first]
+        while True:
+            patterns.append(self.parse_pattern_as())
+            if not self.match(TokenType.PIPE):
+                break
+
+        return MatchOr(
+            patterns=patterns,
+            start_pos=first.start_pos,
+            end_pos=patterns[-1].end_pos,
+        )
+
+    def parse_pattern_as(self) -> MatchPattern:
+        """Parses a pattern with optional 'jaise <name>' capture."""
+        pat = self.parse_pattern_atom()
+        if self.check_py_keyword("as"):
+            self.advance()  # Consume 'jaise'
+            name_tok = self.expect(TokenType.IDENTIFIER, "Expected identifier after 'jaise' in pattern")
+            return MatchAs(
+                pattern=pat,
+                name=str(name_tok.value),
+                start_pos=pat.start_pos,
+                end_pos=name_tok.end_pos,
+            )
+        return pat
+
+    def parse_pattern_atom(self) -> MatchPattern:
+        """Parses atomic patterns: wildcard, literals, sequences, mappings, classes, captures."""
+        tok = self.peek()
+        start_pos = tok.start_pos
+
+        # 1. Negative numbers: -1, -3.14
+        if self.match(TokenType.MINUS):
+            num_tok = self.peek()
+            if num_tok.type == TokenType.INTEGER:
+                self.advance()
+                return MatchValue(
+                    value=UnaryOperation(
+                        op="-",
+                        operand=Integer(value=int(num_tok.value), start_pos=num_tok.start_pos, end_pos=num_tok.end_pos),
+                        start_pos=start_pos,
+                        end_pos=num_tok.end_pos,
+                    ),
+                    start_pos=start_pos,
+                    end_pos=num_tok.end_pos,
+                )
+            if num_tok.type == TokenType.FLOAT:
+                self.advance()
+                return MatchValue(
+                    value=UnaryOperation(
+                        op="-",
+                        operand=Float(value=float(num_tok.value), start_pos=num_tok.start_pos, end_pos=num_tok.end_pos),
+                        start_pos=start_pos,
+                        end_pos=num_tok.end_pos,
+                    ),
+                    start_pos=start_pos,
+                    end_pos=num_tok.end_pos,
+                )
+
+        # 2. Literals: Integer, Float, Complex, String
+        if tok.type == TokenType.INTEGER:
+            self.advance()
+            return MatchValue(
+                value=Integer(value=int(tok.value), start_pos=start_pos, end_pos=tok.end_pos),
+                start_pos=start_pos,
+                end_pos=tok.end_pos,
+            )
+        if tok.type == TokenType.FLOAT:
+            self.advance()
+            return MatchValue(
+                value=Float(value=float(tok.value), start_pos=start_pos, end_pos=tok.end_pos),
+                start_pos=start_pos,
+                end_pos=tok.end_pos,
+            )
+        if tok.type == TokenType.COMPLEX:
+            self.advance()
+            return MatchValue(
+                value=Complex(value=complex(tok.value), start_pos=start_pos, end_pos=tok.end_pos),
+                start_pos=start_pos,
+                end_pos=tok.end_pos,
+            )
+        if tok.type == TokenType.STRING:
+            self.advance()
+            return MatchValue(
+                value=String(value=str(tok.value), start_pos=start_pos, end_pos=tok.end_pos),
+                start_pos=start_pos,
+                end_pos=tok.end_pos,
+            )
+
+        # 3. Singletons: sahi, galat, kuch_nahi / shunya
+        if tok.type == TokenType.BOOLEAN:
+            self.advance()
+            return MatchSingleton(value=bool(tok.value), start_pos=start_pos, end_pos=tok.end_pos)
+
+        if tok.type == TokenType.NONE:
+            self.advance()
+            return MatchSingleton(value=None, start_pos=start_pos, end_pos=tok.end_pos)
+
+        if self.registry.is_literal_keyword(str(tok.raw_text or tok.value)):
+            py_lit = self.registry.get_python_equivalent(str(tok.raw_text or tok.value))
+            self.advance()
+            val: Any = None
+            if py_lit == "True":
+                val = True
+            elif py_lit == "False":
+                val = False
+            return MatchSingleton(value=val, start_pos=start_pos, end_pos=tok.end_pos)
+
+        # 4. Sequence patterns: [ ... ] or ( ... )
+        if self.match(TokenType.LBRACKET):
+            elements: List[MatchPattern] = []
+            while not self.check(TokenType.RBRACKET) and not self.is_at_end():
+                if self.match(TokenType.STAR):
+                    star_tok = self.tokens[self.cursor - 1]
+                    if self.check(TokenType.IDENTIFIER):
+                        id_tok = self.advance()
+                        star_name = str(id_tok.value)
+                        elements.append(MatchStar(name=star_name, start_pos=star_tok.start_pos, end_pos=id_tok.end_pos))
+                    else:
+                        elements.append(MatchStar(name=None, start_pos=star_tok.start_pos, end_pos=star_tok.end_pos))
+                else:
+                    elements.append(self.parse_pattern())
+
+                if not self.match(TokenType.COMMA):
+                    break
+
+            rbracket = self.expect(TokenType.RBRACKET, "Expected ']' after sequence pattern")
+            return MatchSequence(patterns=elements, start_pos=start_pos, end_pos=rbracket.end_pos)
+
+        if self.match(TokenType.LPAREN):
+            elements = []
+            while not self.check(TokenType.RPAREN) and not self.is_at_end():
+                if self.match(TokenType.STAR):
+                    star_tok = self.tokens[self.cursor - 1]
+                    if self.check(TokenType.IDENTIFIER):
+                        id_tok = self.advance()
+                        star_name = str(id_tok.value)
+                        elements.append(MatchStar(name=star_name, start_pos=star_tok.start_pos, end_pos=id_tok.end_pos))
+                    else:
+                        elements.append(MatchStar(name=None, start_pos=star_tok.start_pos, end_pos=star_tok.end_pos))
+                else:
+                    elements.append(self.parse_pattern())
+
+                if not self.match(TokenType.COMMA):
+                    break
+
+            rparen = self.expect(TokenType.RPAREN, "Expected ')' after sequence pattern")
+            return MatchSequence(patterns=elements, start_pos=start_pos, end_pos=rparen.end_pos)
+
+        # 5. Mapping patterns: { ... }
+        if self.match(TokenType.LBRACE):
+            keys: List[Expression] = []
+            patterns: List[MatchPattern] = []
+            rest: Optional[str] = None
+
+            while not self.check(TokenType.RBRACE) and not self.is_at_end():
+                if self.match(TokenType.STAR_STAR):
+                    rest_tok = self.expect(TokenType.IDENTIFIER, "Expected identifier after '**' in mapping pattern")
+                    rest = str(rest_tok.value)
+                    self.match(TokenType.COMMA)
+                    break
+
+                k = self.parse_expression()
+                self.expect(TokenType.COLON, "Expected ':' in mapping pattern")
+                p = self.parse_pattern()
+                keys.append(k)
+                patterns.append(p)
+
+                if not self.match(TokenType.COMMA):
+                    break
+
+            rbrace = self.expect(TokenType.RBRACE, "Expected '}' after mapping pattern")
+            return MatchMapping(keys=keys, patterns=patterns, rest=rest, start_pos=start_pos, end_pos=rbrace.end_pos)
+
+        # 6. Identifier-based patterns: wildcard '_', class 'Point(...)', value 'Color.RED', or capture 'x'
+        if tok.type == TokenType.IDENTIFIER:
+            id_name = str(tok.value)
+            # Wildcard
+            if id_name == "_":
+                self.advance()
+                return MatchAs(pattern=None, name="_", start_pos=start_pos, end_pos=tok.end_pos)
+
+            # Class pattern: Name(...)
+            if self.peek(1).type == TokenType.LPAREN:
+                self.advance()  # Consume name
+                self.expect(TokenType.LPAREN, "Expected '(' in class pattern")
+                pos_patterns: List[MatchPattern] = []
+                kwd_attrs: List[str] = []
+                kwd_patterns: List[MatchPattern] = []
+
+                while not self.check(TokenType.RPAREN) and not self.is_at_end():
+                    if self.check(TokenType.IDENTIFIER) and self.peek(1).type == TokenType.ASSIGN:
+                        k_tok = self.advance()
+                        self.advance()  # '='
+                        p = self.parse_pattern()
+                        kwd_attrs.append(str(k_tok.value))
+                        kwd_patterns.append(p)
+                    else:
+                        p = self.parse_pattern()
+                        pos_patterns.append(p)
+
+                    if not self.match(TokenType.COMMA):
+                        break
+
+                rparen = self.expect(TokenType.RPAREN, "Expected ')' after class pattern")
+                cls_node = Identifier(name=id_name, start_pos=start_pos, end_pos=tok.end_pos)
+                return MatchClass(
+                    cls=cls_node,
+                    patterns=pos_patterns,
+                    kwd_attrs=kwd_attrs,
+                    kwd_patterns=kwd_patterns,
+                    start_pos=start_pos,
+                    end_pos=rparen.end_pos,
+                )
+
+            # Value pattern with attribute access: Color.RED
+            if self.peek(1).type == TokenType.DOT:
+                expr = self.parse_call_subscript_attribute()
+                return MatchValue(value=expr, start_pos=start_pos, end_pos=expr.end_pos)
+
+            # Standard variable capture: x
+            self.advance()
+            return MatchAs(pattern=None, name=id_name, start_pos=start_pos, end_pos=tok.end_pos)
+
+        raise self._syntax_error(f"Unexpected token in pattern: '{tok.raw_text or tok.value}'", tok)

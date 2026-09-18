@@ -155,6 +155,8 @@ class KeywordRegistry:
         self.register_alias("roop_mein", "jaise")     # 'roop_mein' -> as
         self.register_alias("aayat", "laao")          # 'aayat' -> import
         self.register_alias("mitao", "hatao")         # 'mitao' -> del
+        self.register_alias("milaao", "milao")        # 'milaao' -> match
+        self.register_alias("vichaar", "sthiti")      # 'vichaar' -> case
 
     def register_statement_keyword(
         self, hinglish_kw: str, python_kw: str, aliases: Optional[List[str]] = None
