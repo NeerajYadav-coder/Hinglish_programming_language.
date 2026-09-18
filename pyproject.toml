@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hinglish"
+version = "0.1.0"
+description = "A Python-compatible programming language interface using Hinglish/Hindi-style syntax."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+    { name = "Hinglish Language Contributors" }
+]
+keywords = ["programming-language", "hinglish", "transpiler", "python"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Education",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Software Development :: Interpreters",
+]
+
+[project.scripts]
+hinglish = "hinglish.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hinglish*"]

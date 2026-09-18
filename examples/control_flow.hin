@@ -1,0 +1,24 @@
+# Control Flow in Hinglish: If/Elif/Else, For, and While
+
+umar = 20
+
+# Conditionals
+agar umar >= 18:
+    dikhao("Aap vote de sakte hain.")
+warna_agar umar >= 16:
+    dikhao("Aap learner ban sakte hain.")
+warna:
+    dikhao("Aap abhi chhote hain.")
+
+# While Loop
+ginti = 1
+dikhao("While loop shuru:")
+jabtak ginti <= 3:
+    dikhao("Ginti number:", ginti)
+    ginti = ginti + 1
+
+# For Loop with List
+shehar_soochi = ["Delhi", "Mumbai", "Bengaluru"]
+dikhao("For loop shuru:")
+har shehar mein shehar_soochi:
+    dikhao("Shehar ka naam:", shehar)

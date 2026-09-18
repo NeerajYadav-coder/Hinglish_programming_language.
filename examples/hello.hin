@@ -1,0 +1,9 @@
+# Hello World in Hinglish
+# Run conceptually: hinglish hello.hin
+
+naam = "Neeraj"
+
+agar naam == "Neeraj":
+    dikhao("Namaste duniya!")
+warna:
+    dikhao("Hello!")

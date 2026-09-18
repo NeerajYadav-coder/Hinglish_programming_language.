@@ -1,0 +1,20 @@
+# Functions in Hinglish: Definition and Return
+
+kaam jod(pehla, doosra):
+    natija = pehla + doosra
+    wapas natija
+
+kaam jaanch_bada(a, b):
+    agar a > b:
+        wapas sahi
+    warna:
+        wapas galat
+
+kul = jod(15, 25)
+dikhao("15 + 25 ka jod:", kul)
+
+kya_bada = jaanch_bada(kul, 30)
+agar kya_bada == sahi:
+    dikhao("Kul 30 se bada hai!")
+warna:
+    dikhao("Kul 30 se chhota ya barabar hai.")
