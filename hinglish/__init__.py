@@ -3,8 +3,8 @@
 A Python-compatible programming language interface using Hinglish/Hindi-style syntax.
 """
 
-__version__ = "0.1.0"
-__author__ = "Hinglish Language Contributors"
+__version__ = "1.0.0"
+__author__ = "Neeraj Yadav"
 
 from .compiler import compile
 from .keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry

@@ -75,34 +75,92 @@ Hinglish Source Code (.hin)
 
 ---
 
-## Status: What is Implemented Now (Step 1)
+## Installation
 
-Step 1 establishes the **architectural foundation, specification, and project baseline**:
+Install Hinglish directly using `pip`:
 
-- [x] **Project Architecture**: Clean, modular Python package structure (`hinglish/lexer`, `hinglish/parser`, `hinglish/ast`, `hinglish/compiler`, `hinglish/runtime`, `hinglish/cli`).
-- [x] **Formal Specification**: Detailed language specification covering initial constructs, indentation rules, and expression rules in [`docs/specification.md`](docs/specification.md).
-- [x] **Keyword Registry**: Centralized, configurable dictionary of keywords and aliases (`hinglish/keywords.py`) designed for easy expansion and customization.
-- [x] **Architecture Blueprint**: Detailed module boundaries and data flow in [`docs/architecture.md`](docs/architecture.md).
-- [x] **Example `.hin` Programs**: Canonical source examples in [`examples/`](examples/).
-- [x] **Test Strategy**: Foundation test suite running with Python's standard `unittest` framework (`tests/`).
+```bash
+# From local repository source
+pip install .
+
+# Or from pre-built wheel
+pip install dist/hinglish-1.0.0-py3-none-any.whl
+```
+
+Requires **Python 3.10+** (tested on Python 3.10 through 3.14). Zero third-party runtime dependencies required!
 
 ---
 
-## Roadmap: What Will Be Implemented Later
+## Quickstart
 
-Future steps will incrementally build out the language pipeline without skipping stages:
+### 1. Minimal Hello World
 
-- **Step 2: Lexer & Tokenizer**:
-  - Deterministic lexical analysis
-  - Proper handling of indentation (`INDENT`, `DEDENT`, `NEWLINE`)
-  - String, number, and comment tokenization
-- **Step 3: Abstract Syntax Tree (AST) & Parser**:
-  - Grammar specification
-  - Deterministic parser translating tokens into Hinglish AST nodes
-- **Step 4: Compiler / Code Generation**:
-  - Transpilation of Hinglish AST into Python AST / Python source
-  - Source-map tracking for accurate error reporting
-- **Step 5: Runtime & CLI**:
-  - `hinglish <file>.hin` command-line runner
-  - Interactive REPL (`hinglish`)
-  - Execution sandbox and error tracebacks translated back to Hinglish line numbers
+Create a file named `hello.hin`:
+
+```hinglish
+naam = "Neeraj"
+
+agar naam == "Neeraj":
+    dikhao("Namaste")
+warna:
+    dikhao("Hello")
+```
+
+Run it using the `hinglish` command:
+
+```bash
+hinglish hello.hin
+```
+
+Output:
+```text
+Namaste
+```
+
+You can also run it via standard Python module invocation:
+```bash
+python3 -m hinglish hello.hin
+```
+
+### 2. Interactive REPL
+
+Start the interactive Hinglish REPL by running `hinglish` with no arguments:
+
+```bash
+hinglish
+```
+
+Example session:
+```hinglish
+Hinglish 1.0.0 Interactive REPL
+Type "exit()", "quit()", or Ctrl-D to exit.
+
+>>> x = 10
+>>> agar x > 5:
+...     dikhao(f"Value is {x}")
+...
+Value is 10
+>>>
+```
+
+### 3. CLI Commands & Flags
+
+The `hinglish` CLI supports execution, debugging, and transpilation:
+
+```bash
+# Run a Hinglish script
+hinglish script.hin
+
+# Inspect token stream
+hinglish --tokens script.hin
+
+# Inspect Abstract Syntax Tree (AST)
+hinglish --ast script.hin
+
+# Transpile to Python source without executing
+hinglish --transpile script.hin
+
+# Check version
+hinglish --version
+```
+
