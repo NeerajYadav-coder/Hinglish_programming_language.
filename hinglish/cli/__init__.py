@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import List, Optional
 
 from .. import __version__
+from ..ast import format_ast
 from ..exceptions import HinglishError
 from ..lexer import format_tokens, tokenize
+from ..parser import parse
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -30,6 +32,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--tokens",
         action="store_true",
         help="Tokenize the file and print a readable token table for debugging.",
+    )
+    parser.add_argument(
+        "--ast",
+        action="store_true",
+        help="Parse the file and print the formatted Abstract Syntax Tree (AST).",
     )
     parser.add_argument(
         "--transpile",
@@ -59,6 +66,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"Error reading {args.file}: {exc}", file=sys.stderr)
         return 1
 
+    # 1. Inspect Token Stream
     if args.tokens:
         try:
             tokens = tokenize(source_code)
@@ -69,10 +77,22 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"Lexer error in {args.file}:\n{err}", file=sys.stderr)
             return 1
 
+    # 2. Inspect AST
+    if args.ast:
+        try:
+            program_ast = parse(source_code)
+            print(f"Hinglish AST for '{args.file}':\n")
+            print(format_ast(program_ast))
+            return 0
+        except HinglishError as err:
+            print(f"Syntax error in {args.file}:\n{err}", file=sys.stderr)
+            return 1
+
     print(
-        f"[Hinglish v{__version__}] Lexer (Step 2) active.\n"
-        f"File '{args.file}' contains valid syntax for tokenization.\n"
-        f"Tip: Use 'hinglish --tokens {args.file}' to inspect the token stream.",
+        f"[Hinglish v{__version__}] Parser & AST (Step 3) active.\n"
+        f"File '{args.file}' is syntactically valid.\n"
+        f"Tip: Use 'hinglish --tokens {args.file}' to inspect tokens.\n"
+        f"Tip: Use 'hinglish --ast {args.file}' to inspect the parsed AST.",
         file=sys.stderr,
     )
     return 0

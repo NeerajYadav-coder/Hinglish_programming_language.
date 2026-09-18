@@ -1,0 +1,886 @@
+"""Deterministic Recursive-Descent Parser for Hinglish.
+
+Consumes a token stream from HinglishLexer and produces a strongly-typed
+Hinglish Abstract Syntax Tree (AST).
+"""
+
+from typing import Any, Dict, List, Optional, Tuple
+
+from ..ast.nodes import (
+    Assignment,
+    ASTNode,
+    AttributeAccess,
+    BinaryOperation,
+    Boolean,
+    BooleanOperation,
+    Break,
+    Comparison,
+    Complex,
+    Continue,
+    DictLiteral,
+    ElifClause,
+    Expression,
+    ExpressionStatement,
+    Float,
+    For,
+    FromImport,
+    FunctionCall,
+    FunctionDefinition,
+    Identifier,
+    If,
+    Import,
+    Indexing,
+    Integer,
+    ListLiteral,
+    NoneLiteral,
+    Pass,
+    Program,
+    Return,
+    Slice,
+    Statement,
+    String,
+    TupleLiteral,
+    UnaryOperation,
+    While,
+)
+from ..exceptions import HinglishSyntaxError
+from ..keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry
+from ..lexer.tokens import Position, Token, TokenType
+
+
+class HinglishParser:
+    """Hand-written recursive-descent parser for Hinglish programs."""
+
+    def __init__(
+        self,
+        tokens: List[Token],
+        registry: Optional[KeywordRegistry] = None,
+        source_code: Optional[str] = None,
+    ) -> None:
+        self.tokens = tokens
+        self.registry = registry or DEFAULT_KEYWORD_REGISTRY
+        self.source_code = source_code
+        self.cursor = 0
+        self.length = len(tokens)
+
+    # -------------------------------------------------------------------------
+    # Helper & Navigation Methods
+    # -------------------------------------------------------------------------
+
+    def is_at_end(self) -> bool:
+        """Returns True if the parser has reached EOF."""
+        if self.cursor >= self.length:
+            return True
+        return self.tokens[self.cursor].type == TokenType.EOF
+
+    def peek(self, offset: int = 0) -> Token:
+        """Returns the token at cursor + offset without consuming it."""
+        pos = self.cursor + offset
+        if pos < self.length:
+            return self.tokens[pos]
+        return self.tokens[-1]  # Return last token (usually EOF)
+
+    def advance(self) -> Token:
+        """Consumes and returns the current token."""
+        tok = self.peek()
+        if not self.is_at_end():
+            self.cursor += 1
+        return tok
+
+    def check(self, token_type: TokenType) -> bool:
+        """Checks if current token matches the given token type."""
+        if self.is_at_end():
+            return False
+        return self.peek().type == token_type
+
+    def match(self, *token_types: TokenType) -> Optional[Token]:
+        """Consumes current token if its type matches any of token_types."""
+        if self.is_at_end():
+            return None
+        if self.peek().type in token_types:
+            return self.advance()
+        return None
+
+    def get_py_keyword(self, tok: Token) -> Optional[str]:
+        """Returns target Python keyword if token is a KEYWORD or IDENTIFIER matching registry."""
+        if tok.type == TokenType.KEYWORD:
+            return self.registry.get_python_equivalent(str(tok.value))
+        if tok.type == TokenType.IDENTIFIER:
+            if self.registry.is_statement_keyword(str(tok.value)) or self.registry.is_operator_keyword(str(tok.value)):
+                return self.registry.get_python_equivalent(str(tok.value))
+        return None
+
+    def check_py_keyword(self, *py_keywords: str) -> bool:
+        """Checks if current token maps to any of the target Python keywords."""
+        if self.is_at_end():
+            return False
+        py_kw = self.get_py_keyword(self.peek())
+        return py_kw in py_keywords
+
+    def match_py_keyword(self, *py_keywords: str) -> Optional[Token]:
+        """Consumes current token if it maps to any of the target Python keywords."""
+        if self.check_py_keyword(*py_keywords):
+            return self.advance()
+        return None
+
+    def expect(self, token_type: TokenType, message: str) -> Token:
+        """Asserts current token matches token_type, otherwise raises HinglishSyntaxError."""
+        if self.check(token_type):
+            return self.advance()
+        current = self.peek()
+        raise self._syntax_error(message, current)
+
+    def skip_newlines(self) -> None:
+        """Consumes any consecutive NEWLINE tokens."""
+        while not self.is_at_end() and self.check(TokenType.NEWLINE):
+            self.advance()
+
+    def _syntax_error(self, message: str, token: Token) -> HinglishSyntaxError:
+        """Constructs a HinglishSyntaxError with line, column, and source snippet."""
+        source_line = None
+        if self.source_code and token.start_pos:
+            lines = self.source_code.splitlines()
+            if 0 <= token.start_pos.line - 1 < len(lines):
+                source_line = lines[token.start_pos.line - 1]
+
+        line = token.start_pos.line if token.start_pos else None
+        col = token.start_pos.column if token.start_pos else None
+        return HinglishSyntaxError(
+            message,
+            line=line,
+            column=col,
+            source_line=source_line,
+        )
+
+    # -------------------------------------------------------------------------
+    # Program & Statement Parsing
+    # -------------------------------------------------------------------------
+
+    def parse(self) -> Program:
+        """Parses the entire token stream into a Program AST node."""
+        statements: List[Statement] = []
+        start_pos = self.peek().start_pos
+
+        self.skip_newlines()
+        while not self.is_at_end():
+            stmt = self.parse_statement()
+            if stmt is not None:
+                statements.append(stmt)
+            self.skip_newlines()
+
+        end_pos = self.peek().end_pos
+        return Program(body=statements, start_pos=start_pos, end_pos=end_pos)
+
+    def parse_statement(self) -> Statement:
+        """Parses a single statement based on keyword or expression dispatch."""
+        self.skip_newlines()
+        tok = self.peek()
+        py_kw = self.get_py_keyword(tok)
+
+        if py_kw == "if":
+            return self.parse_if()
+        if py_kw == "while":
+            return self.parse_while()
+        if py_kw == "for":
+            return self.parse_for()
+        if py_kw == "def":
+            return self.parse_function_definition()
+        if py_kw == "return":
+            return self.parse_return()
+        if py_kw == "break":
+            return self.parse_break()
+        if py_kw == "continue":
+            return self.parse_continue()
+        if py_kw == "pass":
+            return self.parse_pass()
+        if py_kw == "import":
+            return self.parse_import()
+        if py_kw == "from":
+            return self.parse_from_import()
+
+        # Expression or Assignment
+        return self.parse_assignment_or_expression_statement()
+
+    def parse_block(self, context_name: str = "statement") -> List[Statement]:
+        """Parses a colon followed by an indented block of statements."""
+        if not self.check(TokenType.COLON):
+            tok = self.peek()
+            raise self._syntax_error(f"Expected ':' after {context_name}", tok)
+        self.advance()  # Consume ':'
+
+        # Must have a NEWLINE followed by INDENT
+        if not self.check(TokenType.NEWLINE):
+            tok = self.peek()
+            raise self._syntax_error(f"Expected newline after ':' in {context_name}", tok)
+        self.advance()  # Consume NEWLINE
+
+        self.skip_newlines()
+
+        if not self.check(TokenType.INDENT):
+            tok = self.peek()
+            raise self._syntax_error(f"Expected an indented block after ':' in {context_name}", tok)
+        self.advance()  # Consume INDENT
+
+        body: List[Statement] = []
+        self.skip_newlines()
+
+        while not self.is_at_end() and not self.check(TokenType.DEDENT):
+            stmt = self.parse_statement()
+            if stmt is not None:
+                body.append(stmt)
+            self.skip_newlines()
+
+        self.expect(TokenType.DEDENT, f"Expected dedent to close {context_name} block")
+        return body
+
+    def parse_if(self) -> If:
+        """Parses an if statement with optional elif and else branches."""
+        start_tok = self.advance()  # Consume 'agar'
+        start_pos = start_tok.start_pos
+
+        if self.check(TokenType.COLON):
+            raise self._syntax_error("Expected condition expression after 'agar'", self.peek())
+
+        condition = self.parse_expression()
+        body = self.parse_block("agar")
+
+        elif_clauses: List[ElifClause] = []
+        else_body: Optional[List[Statement]] = None
+
+        while not self.is_at_end():
+            self.skip_newlines()
+            if self.check_py_keyword("elif"):
+                elif_tok = self.advance()  # Consume 'warna_agar'
+                if self.check(TokenType.COLON):
+                    raise self._syntax_error("Expected condition expression after 'warna_agar'", self.peek())
+                elif_cond = self.parse_expression()
+                elif_body = self.parse_block("warna_agar")
+                elif_clauses.append(
+                    ElifClause(
+                        condition=elif_cond,
+                        body=elif_body,
+                        start_pos=elif_tok.start_pos,
+                    )
+                )
+            else:
+                break
+
+        self.skip_newlines()
+        if self.check_py_keyword("else"):
+            self.advance()  # Consume 'warna'
+            else_body = self.parse_block("warna")
+
+        end_pos = (else_body[-1].end_pos if else_body else body[-1].end_pos) if body else start_pos
+        return If(
+            condition=condition,
+            body=body,
+            elif_clauses=elif_clauses,
+            else_body=else_body,
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
+
+    def parse_while(self) -> While:
+        """Parses a while loop: jabtak <cond>: <body>."""
+        start_tok = self.advance()  # Consume 'jabtak'
+        start_pos = start_tok.start_pos
+
+        if self.check(TokenType.COLON):
+            raise self._syntax_error("Expected condition expression after 'jabtak'", self.peek())
+
+        condition = self.parse_expression()
+        body = self.parse_block("jabtak")
+
+        end_pos = body[-1].end_pos if body else start_pos
+        return While(
+            condition=condition,
+            body=body,
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
+
+    def parse_for(self) -> For:
+        """Parses a for loop: har <target> mein <iterable>: <body>."""
+        start_tok = self.advance()  # Consume 'har'
+        start_pos = start_tok.start_pos
+
+        if self.check(TokenType.COLON):
+            raise self._syntax_error("Expected loop variable after 'har'", self.peek())
+
+        target = self.parse_primary()
+
+        # Expect 'mein' or 'andar' (Python target 'in')
+        if not self.check_py_keyword("in"):
+            tok = self.peek()
+            raise self._syntax_error("Expected 'mein' or 'andar' in for loop", tok)
+        self.advance()  # Consume 'mein' / 'andar'
+
+        iterable = self.parse_expression()
+        body = self.parse_block("har")
+
+        end_pos = body[-1].end_pos if body else start_pos
+        return For(
+            target=target,
+            iterable=iterable,
+            body=body,
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
+
+    def parse_function_definition(self) -> FunctionDefinition:
+        """Parses a function definition: kaam <name>(<params>): <body>."""
+        start_tok = self.advance()  # Consume 'kaam'
+        start_pos = start_tok.start_pos
+
+        name_tok = self.expect(TokenType.IDENTIFIER, "Expected function name after 'kaam'")
+        self.expect(TokenType.LPAREN, "Expected '(' after function name")
+
+        params: List[str] = []
+        if not self.check(TokenType.RPAREN):
+            param_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name")
+            params.append(str(param_tok.value))
+            while self.match(TokenType.COMMA):
+                if self.check(TokenType.RPAREN):
+                    break
+                p_tok = self.expect(TokenType.IDENTIFIER, "Expected parameter name after ','")
+                params.append(str(p_tok.value))
+
+        self.expect(TokenType.RPAREN, "Expected ')' after parameter list")
+        body = self.parse_block(f"function '{name_tok.value}'")
+
+        end_pos = body[-1].end_pos if body else start_pos
+        return FunctionDefinition(
+            name=str(name_tok.value),
+            params=params,
+            body=body,
+            start_pos=start_pos,
+            end_pos=end_pos,
+        )
+
+    def parse_return(self) -> Return:
+        """Parses return statement: wapas [<value>]."""
+        start_tok = self.advance()  # Consume 'wapas'
+        start_pos = start_tok.start_pos
+
+        val: Optional[Expression] = None
+        if not self.is_at_end() and not self.check(TokenType.NEWLINE):
+            val = self.parse_expression()
+
+        self.expect_statement_terminator()
+        end_pos = val.end_pos if val else start_tok.end_pos
+        return Return(value=val, start_pos=start_pos, end_pos=end_pos)
+
+    def parse_break(self) -> Break:
+        """Parses break statement: ruko."""
+        start_tok = self.advance()
+        self.expect_statement_terminator()
+        return Break(start_pos=start_tok.start_pos, end_pos=start_tok.end_pos)
+
+    def parse_continue(self) -> Continue:
+        """Parses continue statement: aage_bado."""
+        start_tok = self.advance()
+        self.expect_statement_terminator()
+        return Continue(start_pos=start_tok.start_pos, end_pos=start_tok.end_pos)
+
+    def parse_pass(self) -> Pass:
+        """Parses pass statement: chhod_do."""
+        start_tok = self.advance()
+        self.expect_statement_terminator()
+        return Pass(start_pos=start_tok.start_pos, end_pos=start_tok.end_pos)
+
+    def parse_import(self) -> Import:
+        """Parses import statement: laao <module> [jaise <alias>]."""
+        start_tok = self.advance()
+        start_pos = start_tok.start_pos
+
+        module_tok = self.expect(TokenType.IDENTIFIER, "Expected module name after 'laao'")
+        alias: Optional[str] = None
+        if self.check_py_keyword("as"):
+            self.advance()  # Consume 'jaise'
+            alias_tok = self.expect(TokenType.IDENTIFIER, "Expected alias name after 'jaise'")
+            alias = str(alias_tok.value)
+
+        self.expect_statement_terminator()
+        return Import(
+            names=[(str(module_tok.value), alias)],
+            start_pos=start_pos,
+            end_pos=self.peek().end_pos,
+        )
+
+    def parse_from_import(self) -> FromImport:
+        """Parses from-import statement: se <module> laao <name> [jaise <alias>]."""
+        start_tok = self.advance()
+        start_pos = start_tok.start_pos
+
+        module_tok = self.expect(TokenType.IDENTIFIER, "Expected module name after 'se'")
+        if not self.check_py_keyword("import"):
+            raise self._syntax_error("Expected 'laao' after module name in from-import", self.peek())
+        self.advance()  # Consume 'laao'
+
+        name_tok = self.expect(TokenType.IDENTIFIER, "Expected imported name after 'laao'")
+        alias: Optional[str] = None
+        if self.check_py_keyword("as"):
+            self.advance()  # Consume 'jaise'
+            alias_tok = self.expect(TokenType.IDENTIFIER, "Expected alias name after 'jaise'")
+            alias = str(alias_tok.value)
+
+        self.expect_statement_terminator()
+        return FromImport(
+            module=str(module_tok.value),
+            names=[(str(name_tok.value), alias)],
+            start_pos=start_pos,
+            end_pos=self.peek().end_pos,
+        )
+
+    def parse_assignment_or_expression_statement(self) -> Statement:
+        """Parses an assignment statement or an expression statement."""
+        expr = self.parse_expression()
+
+        # Check for assignment operators
+        assign_tokens = {
+            TokenType.ASSIGN: "=",
+            TokenType.PLUS_ASSIGN: "+=",
+            TokenType.MINUS_ASSIGN: "-=",
+            TokenType.STAR_ASSIGN: "*=",
+            TokenType.SLASH_ASSIGN: "/=",
+            TokenType.DOUBLE_SLASH_ASSIGN: "//=",
+            TokenType.PERCENT_ASSIGN: "%=",
+            TokenType.STAR_STAR_ASSIGN: "**=",
+            TokenType.AMPERSAND_ASSIGN: "&=",
+            TokenType.PIPE_ASSIGN: "|=",
+            TokenType.CARET_ASSIGN: "^=",
+            TokenType.LSHIFT_ASSIGN: "<<=",
+            TokenType.RSHIFT_ASSIGN: ">>=",
+        }
+
+        if self.peek().type in assign_tokens:
+            op_tok = self.advance()
+            op_str = assign_tokens[op_tok.type]
+            value = self.parse_expression()
+            self.expect_statement_terminator()
+            return Assignment(
+                target=expr,
+                op=op_str,
+                value=value,
+                start_pos=expr.start_pos,
+                end_pos=value.end_pos,
+            )
+
+        self.expect_statement_terminator()
+        return ExpressionStatement(
+            expr=expr,
+            start_pos=expr.start_pos,
+            end_pos=expr.end_pos,
+        )
+
+    def expect_statement_terminator(self) -> None:
+        """Expects a NEWLINE or EOF to terminate a statement."""
+        if self.is_at_end():
+            return
+        if self.check(TokenType.NEWLINE):
+            self.advance()
+            return
+        tok = self.peek()
+        raise self._syntax_error(f"Unexpected token '{tok.raw_text or tok.value}' after statement", tok)
+
+    # -------------------------------------------------------------------------
+    # Expression Parsing with Precedence Climbing
+    # -------------------------------------------------------------------------
+
+    def parse_expression(self) -> Expression:
+        """Top-level entry for parsing expressions."""
+        return self.parse_boolean_or()
+
+    def parse_boolean_or(self) -> Expression:
+        """Parses boolean OR: expr ('ya' / 'or' expr)*."""
+        left = self.parse_boolean_and()
+        values = [left]
+
+        while self.check_py_keyword("or"):
+            op_tok = self.advance()
+            right = self.parse_boolean_and()
+            values.append(right)
+
+        if len(values) > 1:
+            return BooleanOperation(
+                op="or",
+                values=values,
+                start_pos=left.start_pos,
+                end_pos=values[-1].end_pos,
+            )
+        return left
+
+    def parse_boolean_and(self) -> Expression:
+        """Parses boolean AND: expr ('aur' / 'and' expr)*."""
+        left = self.parse_boolean_not()
+        values = [left]
+
+        while self.check_py_keyword("and"):
+            op_tok = self.advance()
+            right = self.parse_boolean_not()
+            values.append(right)
+
+        if len(values) > 1:
+            return BooleanOperation(
+                op="and",
+                values=values,
+                start_pos=left.start_pos,
+                end_pos=values[-1].end_pos,
+            )
+        return left
+
+    def parse_boolean_not(self) -> Expression:
+        """Parses boolean NOT: 'nahi' / 'not' expr."""
+        if self.check_py_keyword("not"):
+            op_tok = self.advance()
+            operand = self.parse_boolean_not()
+            return UnaryOperation(
+                op="not",
+                operand=operand,
+                start_pos=op_tok.start_pos,
+                end_pos=operand.end_pos,
+            )
+        return self.parse_comparison()
+
+    def parse_comparison(self) -> Expression:
+        """Parses comparison operators: ==, !=, <, <=, >, >=, hai (is), mein (in)."""
+        left = self.parse_bitwise_or()
+
+        cmp_tokens = {
+            TokenType.EQ: "==",
+            TokenType.NE: "!=",
+            TokenType.LT: "<",
+            TokenType.LE: "<=",
+            TokenType.GT: ">",
+            TokenType.GE: ">=",
+        }
+
+        # Handle operators like ==, !=, etc.
+        if self.peek().type in cmp_tokens:
+            op_tok = self.advance()
+            op_str = cmp_tokens[op_tok.type]
+            right = self.parse_bitwise_or()
+            return Comparison(
+                left=left,
+                op=op_str,
+                right=right,
+                start_pos=left.start_pos,
+                end_pos=right.end_pos,
+            )
+
+        # Handle 'hai' (is) or 'mein' (in)
+        if self.check_py_keyword("is"):
+            op_tok = self.advance()
+            op_str = "is"
+            if self.check_py_keyword("not"):
+                self.advance()
+                op_str = "is not"
+            right = self.parse_bitwise_or()
+            return Comparison(
+                left=left,
+                op=op_str,
+                right=right,
+                start_pos=left.start_pos,
+                end_pos=right.end_pos,
+            )
+
+        if self.check_py_keyword("in"):
+            op_tok = self.advance()
+            right = self.parse_bitwise_or()
+            return Comparison(
+                left=left,
+                op="in",
+                right=right,
+                start_pos=left.start_pos,
+                end_pos=right.end_pos,
+            )
+
+        return left
+
+    def parse_bitwise_or(self) -> Expression:
+        """Parses bitwise OR: left | right."""
+        left = self.parse_bitwise_xor()
+        while self.match(TokenType.PIPE):
+            right = self.parse_bitwise_xor()
+            left = BinaryOperation(left=left, op="|", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+        return left
+
+    def parse_bitwise_xor(self) -> Expression:
+        """Parses bitwise XOR: left ^ right."""
+        left = self.parse_bitwise_and()
+        while self.match(TokenType.CARET):
+            right = self.parse_bitwise_and()
+            left = BinaryOperation(left=left, op="^", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+        return left
+
+    def parse_bitwise_and(self) -> Expression:
+        """Parses bitwise AND: left & right."""
+        left = self.parse_shift()
+        while self.match(TokenType.AMPERSAND):
+            right = self.parse_shift()
+            left = BinaryOperation(left=left, op="&", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+        return left
+
+    def parse_shift(self) -> Expression:
+        """Parses shift operators: <<, >>."""
+        left = self.parse_term()
+        while True:
+            if self.match(TokenType.LSHIFT):
+                right = self.parse_term()
+                left = BinaryOperation(left=left, op="<<", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            elif self.match(TokenType.RSHIFT):
+                right = self.parse_term()
+                left = BinaryOperation(left=left, op=">>", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            else:
+                break
+        return left
+
+    def parse_term(self) -> Expression:
+        """Parses addition and subtraction: +, -."""
+        left = self.parse_factor()
+        while True:
+            if self.match(TokenType.PLUS):
+                right = self.parse_factor()
+                left = BinaryOperation(left=left, op="+", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            elif self.match(TokenType.MINUS):
+                right = self.parse_factor()
+                left = BinaryOperation(left=left, op="-", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            else:
+                break
+        return left
+
+    def parse_factor(self) -> Expression:
+        """Parses multiplication, division, modulo: *, /, //, %, @."""
+        left = self.parse_unary()
+        while True:
+            if self.match(TokenType.STAR):
+                right = self.parse_unary()
+                left = BinaryOperation(left=left, op="*", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            elif self.match(TokenType.SLASH):
+                right = self.parse_unary()
+                left = BinaryOperation(left=left, op="/", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            elif self.match(TokenType.DOUBLE_SLASH):
+                right = self.parse_unary()
+                left = BinaryOperation(left=left, op="//", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            elif self.match(TokenType.PERCENT):
+                right = self.parse_unary()
+                left = BinaryOperation(left=left, op="%", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            elif self.match(TokenType.AT):
+                right = self.parse_unary()
+                left = BinaryOperation(left=left, op="@", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+            else:
+                break
+        return left
+
+    def parse_unary(self) -> Expression:
+        """Parses unary operators: +, -, ~."""
+        if self.match(TokenType.PLUS):
+            tok = self.tokens[self.cursor - 1]
+            operand = self.parse_unary()
+            return UnaryOperation(op="+", operand=operand, start_pos=tok.start_pos, end_pos=operand.end_pos)
+        if self.match(TokenType.MINUS):
+            tok = self.tokens[self.cursor - 1]
+            operand = self.parse_unary()
+            return UnaryOperation(op="-", operand=operand, start_pos=tok.start_pos, end_pos=operand.end_pos)
+        if self.match(TokenType.TILDE):
+            tok = self.tokens[self.cursor - 1]
+            operand = self.parse_unary()
+            return UnaryOperation(op="~", operand=operand, start_pos=tok.start_pos, end_pos=operand.end_pos)
+        return self.parse_power()
+
+    def parse_power(self) -> Expression:
+        """Parses exponentiation: ** (right-associative)."""
+        left = self.parse_call_subscript_attribute()
+        if self.match(TokenType.STAR_STAR):
+            right = self.parse_unary()  # Right-associative calls parse_unary
+            return BinaryOperation(left=left, op="**", right=right, start_pos=left.start_pos, end_pos=right.end_pos)
+        return left
+
+    def parse_call_subscript_attribute(self) -> Expression:
+        """Parses primary followed by calls (), subscripts [], or attribute accesses ."""
+        expr = self.parse_primary()
+
+        while True:
+            # 1. Function call: expr(...)
+            if self.match(TokenType.LPAREN):
+                args: List[Expression] = []
+                keywords: Dict[str, Expression] = {}
+
+                if not self.check(TokenType.RPAREN):
+                    while True:
+                        if self.check(TokenType.RPAREN):
+                            break
+                        # Check keyword arg: name = expr
+                        if (
+                            self.check(TokenType.IDENTIFIER)
+                            and self.peek(1).type == TokenType.ASSIGN
+                        ):
+                            k_tok = self.advance()  # name
+                            self.advance()          # '='
+                            v_expr = self.parse_expression()
+                            keywords[str(k_tok.value)] = v_expr
+                        else:
+                            args.append(self.parse_expression())
+
+                        if not self.match(TokenType.COMMA):
+                            break
+
+                rparen = self.expect(TokenType.RPAREN, "Expected ')' after function arguments")
+                expr = FunctionCall(
+                    func=expr,
+                    args=args,
+                    keywords=keywords,
+                    start_pos=expr.start_pos,
+                    end_pos=rparen.end_pos,
+                )
+                continue
+
+            # 2. Subscript / Slicing: expr[...]
+            if self.match(TokenType.LBRACKET):
+                subscript_expr = self.parse_subscript_or_slice()
+                rbracket = self.expect(TokenType.RBRACKET, "Expected ']' after index")
+                expr = Indexing(
+                    value=expr,
+                    index=subscript_expr,
+                    start_pos=expr.start_pos,
+                    end_pos=rbracket.end_pos,
+                )
+                continue
+
+            # 3. Attribute access: expr.attr
+            if self.match(TokenType.DOT):
+                attr_tok = self.expect(TokenType.IDENTIFIER, "Expected attribute name after '.'")
+                expr = AttributeAccess(
+                    value=expr,
+                    attr=str(attr_tok.value),
+                    start_pos=expr.start_pos,
+                    end_pos=attr_tok.end_pos,
+                )
+                continue
+
+            break
+
+        return expr
+
+    def parse_subscript_or_slice(self) -> Expression:
+        """Parses an index expression or a slice lower:upper:step."""
+        # Check for slice starting with ':' e.g. [:5]
+        if self.match(TokenType.COLON):
+            upper = None
+            step = None
+            if not self.check(TokenType.RBRACKET) and not self.check(TokenType.COLON):
+                upper = self.parse_expression()
+            if self.match(TokenType.COLON):
+                if not self.check(TokenType.RBRACKET):
+                    step = self.parse_expression()
+            return Slice(lower=None, upper=upper, step=step)
+
+        first_expr = self.parse_expression()
+
+        # If followed by ':', it is a slice
+        if self.match(TokenType.COLON):
+            upper = None
+            step = None
+            if not self.check(TokenType.RBRACKET) and not self.check(TokenType.COLON):
+                upper = self.parse_expression()
+            if self.match(TokenType.COLON):
+                if not self.check(TokenType.RBRACKET):
+                    step = self.parse_expression()
+            return Slice(lower=first_expr, upper=upper, step=step)
+
+        return first_expr
+
+    def parse_primary(self) -> Expression:
+        """Parses atomic primary expressions: literals, identifiers, lists, dicts, grouped exprs."""
+        tok = self.peek()
+
+        # 1. Literals
+        if tok.type == TokenType.INTEGER:
+            self.advance()
+            return Integer(value=int(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+
+        if tok.type == TokenType.FLOAT:
+            self.advance()
+            return Float(value=float(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+
+        if tok.type == TokenType.COMPLEX:
+            self.advance()
+            return Complex(value=complex(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+
+        if tok.type == TokenType.STRING:
+            self.advance()
+            return String(value=str(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+
+        if tok.type == TokenType.BOOLEAN:
+            self.advance()
+            return Boolean(value=bool(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+
+        if tok.type == TokenType.NONE:
+            self.advance()
+            return NoneLiteral(value=None, start_pos=tok.start_pos, end_pos=tok.end_pos)
+
+        # 2. Identifiers
+        if tok.type == TokenType.IDENTIFIER:
+            self.advance()
+            return Identifier(name=str(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+
+        # 3. Parentheses: (expr) or tuple (x, y) or ()
+        if self.match(TokenType.LPAREN):
+            start_pos = tok.start_pos
+            if self.match(TokenType.RPAREN):
+                # Empty tuple ()
+                return TupleLiteral(elements=[], start_pos=start_pos, end_pos=self.tokens[self.cursor - 1].end_pos)
+
+            first = self.parse_expression()
+            if self.match(TokenType.COMMA):
+                # Tuple literal (first, ...)
+                elements = [first]
+                while not self.check(TokenType.RPAREN) and not self.is_at_end():
+                    elements.append(self.parse_expression())
+                    if not self.match(TokenType.COMMA):
+                        break
+                rparen = self.expect(TokenType.RPAREN, "Expected ')' after tuple elements")
+                return TupleLiteral(elements=elements, start_pos=start_pos, end_pos=rparen.end_pos)
+
+            rparen = self.expect(TokenType.RPAREN, "Expected ')' after expression")
+            return first
+
+        # 4. Lists: [elem1, elem2, ...]
+        if self.match(TokenType.LBRACKET):
+            start_pos = tok.start_pos
+            elements = []
+            if not self.check(TokenType.RBRACKET):
+                elements.append(self.parse_expression())
+                while self.match(TokenType.COMMA):
+                    if self.check(TokenType.RBRACKET):
+                        break
+                    elements.append(self.parse_expression())
+
+            rbracket = self.expect(TokenType.RBRACKET, "Expected ']' after list elements")
+            return ListLiteral(elements=elements, start_pos=start_pos, end_pos=rbracket.end_pos)
+
+        # 5. Dictionaries: {key1: val1, key2: val2, ...}
+        if self.match(TokenType.LBRACE):
+            start_pos = tok.start_pos
+            keys = []
+            values = []
+            if not self.check(TokenType.RBRACE):
+                k = self.parse_expression()
+                self.expect(TokenType.COLON, "Expected ':' after dictionary key")
+                v = self.parse_expression()
+                keys.append(k)
+                values.append(v)
+                while self.match(TokenType.COMMA):
+                    if self.check(TokenType.RBRACE):
+                        break
+                    k = self.parse_expression()
+                    self.expect(TokenType.COLON, "Expected ':' after dictionary key")
+                    v = self.parse_expression()
+                    keys.append(k)
+                    values.append(v)
+
+            rbrace = self.expect(TokenType.RBRACE, "Expected '}' after dictionary elements")
+            return DictLiteral(keys=keys, values=values, start_pos=start_pos, end_pos=rbrace.end_pos)
+
+        # Unexpected token
+        raise self._syntax_error(f"Unexpected token '{tok.raw_text or tok.value}'", tok)
