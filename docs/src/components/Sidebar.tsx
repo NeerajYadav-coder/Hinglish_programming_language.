@@ -1,0 +1,161 @@
+import React from 'react';
+import {
+  Home,
+  Rocket,
+  BookOpen,
+  Code,
+  Terminal,
+  FolderTree,
+  FileCode2,
+  Cpu,
+  Layers,
+  Sparkles
+} from 'lucide-react';
+import { NavSection } from '../types';
+
+interface SidebarProps {
+  currentRoute: string;
+  navigate: (route: string) => void;
+  mobileMenuOpen: boolean;
+  setMobileMenuOpen: (val: boolean) => void;
+}
+
+export const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'Shuruaat (Introduction)',
+    items: [
+      { id: '/', title: 'Home', titleHi: 'Mukhya Prishth', iconName: 'Home' },
+      { id: '/getting-started', title: 'Getting Started', titleHi: 'Shuru Karein', iconName: 'Rocket' },
+      { id: '/examples', title: 'Examples', titleHi: 'Udaharan Gallery', iconName: 'Code', badge: '11 Demo' },
+    ]
+  },
+  {
+    title: 'Bhasha aur Syntax',
+    items: [
+      { id: '/guide', title: 'Language Guide', titleHi: 'Bhasha Nirdeshika', iconName: 'BookOpen' },
+      { id: '/keywords', title: 'Keywords', titleHi: 'Shabdakosh Explorer', iconName: 'Sparkles', badge: '30+' },
+      { id: '/python-compat', title: 'Python Semantics', titleHi: 'Python Sangatata', iconName: 'Cpu' },
+    ]
+  },
+  {
+    title: 'Developer Tooling',
+    items: [
+      { id: '/cli', title: 'CLI Reference', titleHi: 'CLI Nirdeshika', iconName: 'Terminal' },
+      { id: '/multi-file', title: 'Multi-File Projects', titleHi: 'Bahu-File Projects', iconName: 'FolderTree' },
+      { id: '/vscode', title: 'VS Code Extension', titleHi: 'VS Code Tooling', iconName: 'FileCode2' },
+    ]
+  },
+  {
+    title: 'Gahrai Mein (Deep Dive)',
+    items: [
+      { id: '/architecture', title: 'Architecture', titleHi: 'System Sanrachna', iconName: 'Layers' },
+      { id: '/philosophy', title: 'Design Philosophy', titleHi: 'Design Vichardhara', iconName: 'BookOpen' },
+    ]
+  }
+];
+
+const renderIcon = (name: string, size = 16) => {
+  switch (name) {
+    case 'Home': return <Home size={size} />;
+    case 'Rocket': return <Rocket size={size} />;
+    case 'BookOpen': return <BookOpen size={size} />;
+    case 'Code': return <Code size={size} />;
+    case 'Terminal': return <Terminal size={size} />;
+    case 'FolderTree': return <FolderTree size={size} />;
+    case 'FileCode2': return <FileCode2 size={size} />;
+    case 'Cpu': return <Cpu size={size} />;
+    case 'Layers': return <Layers size={size} />;
+    case 'Sparkles': return <Sparkles size={size} />;
+    default: return <BookOpen size={size} />;
+  }
+};
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentRoute,
+  navigate,
+  mobileMenuOpen,
+  setMobileMenuOpen
+}) => {
+  return (
+    <aside
+      className={`apple-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1.75rem'
+      }}
+    >
+      {NAV_SECTIONS.map((section, idx) => (
+        <div key={idx}>
+          <div
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: 'var(--text-muted)',
+              marginBottom: '0.5rem',
+              paddingLeft: '0.6rem'
+            }}
+          >
+            {section.title}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {section.items.map((item) => {
+              const isActive = currentRoute === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    navigate(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.55rem 0.75rem',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: isActive ? 'var(--accent-soft)' : 'transparent',
+                    color: isActive ? 'var(--accent-color)' : 'var(--text-primary)',
+                    fontWeight: isActive ? 600 : 400,
+                    fontSize: '0.88rem',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    transition: 'all 0.15s ease',
+                    width: '100%'
+                  }}
+                  className="sidebar-item-btn"
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <span style={{ color: isActive ? 'var(--accent-color)' : 'var(--text-muted)' }}>
+                      {renderIcon(item.iconName)}
+                    </span>
+                    <span>{item.titleHi}</span>
+                  </div>
+
+                  {item.badge && (
+                    <span
+                      style={{
+                        fontSize: '0.65rem',
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '9999px',
+                        background: isActive ? 'var(--accent-color)' : 'var(--bg-tertiary)',
+                        color: isActive ? '#ffffff' : 'var(--text-muted)',
+                        fontWeight: 600
+                      }}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </aside>
+  );
+};
