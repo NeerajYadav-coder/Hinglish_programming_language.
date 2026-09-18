@@ -1,0 +1,46 @@
+{
+  "name": "hinglish",
+  "displayName": "Hinglish Language Support",
+  "description": "Visual Studio Code syntax highlighting and language support for the Hinglish programming language.",
+  "version": "1.0.0",
+  "publisher": "neerajyadav",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "hinglish",
+    "python",
+    "syntax",
+    "language",
+    "hindi"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NeerajYadav-coder/Hinglish_programming_language."
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "hinglish",
+        "aliases": [
+          "Hinglish",
+          "hinglish"
+        ],
+        "extensions": [
+          ".hin"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "hinglish",
+        "scopeName": "source.hinglish",
+        "path": "./syntaxes/hinglish.tmLanguage.json"
+      }
+    ]
+  }
+}

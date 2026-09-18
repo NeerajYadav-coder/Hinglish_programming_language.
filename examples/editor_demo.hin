@@ -1,0 +1,141 @@
+# ==============================================================================
+# HINGLISH LANGUAGE SYNTAX SHOWCASE (.hin)
+# A complete demonstration of Hinglish grammar, keywords, and capabilities
+# ==============================================================================
+
+# 1. Imports from Python standard library
+se math laao sqrt jaise vargmool
+se asyncio laao sleep jaise async_sleep, run jaise async_run
+
+# 2. Variable declarations and basic types
+app_name = "Hinglish Showcase"
+version_code = 100
+pi_approx = 3.14159
+is_active = sahi
+is_completed = galat
+optional_val = kuch_nahi
+complex_num = 2 + 3j
+
+dikhao(f"=== {app_name} (v{version_code}) ===")
+
+# 3. Global variable declaration
+sarvavyapi_counter = 0
+
+kaam increment_counter():
+    sarvavyapi sarvavyapi_counter
+    sarvavyapi_counter = sarvavyapi_counter + 1
+
+increment_counter()
+dikhao(f"Global counter value: {sarvavyapi_counter}")
+
+# 4. Decorator and Function definitions
+kaam my_logger(func):
+    kaam wrapper(*args, **kwargs):
+        res = func(*args, **kwargs)
+        wapas res
+    wapas wrapper
+
+@my_logger
+kaam calculate_hypotenuse(a: float, b: float) -> float:
+    wapas vargmool(a ** 2 + b ** 2)
+
+hyp = calculate_hypotenuse(3.0, 4.0)
+dikhao(f"Calculated hypotenuse: {hyp}")
+
+# 5. Object-Oriented Programming (Classes, Methods, Properties)
+varg Shape:
+    kaam __init__(self, name):
+        self._name = name
+
+    @property
+    kaam name(self):
+        wapas self._name
+
+varg Rectangle(Shape):
+    kaam __init__(self, width, height):
+        self._name = "Rectangle"
+        self.width = width
+        self.height = height
+
+    kaam area(self):
+        wapas self.width * self.height
+
+rect = Rectangle(10, 5)
+dikhao(f"Shape: {rect.name}, Area: {rect.area()}")
+
+# 6. Control Flow: Conditionals
+score = 85
+agar score >= 90:
+    grade = "A+"
+warna_agar score >= 80:
+    grade = "A"
+warna:
+    grade = "B"
+dikhao(f"Score {score} yields grade: {grade}")
+
+# 7. Loops: While and For
+total_sum = 0
+num = 1
+jabtak num <= 5:
+    total_sum = total_sum + num
+    num = num + 1
+    agar num == 3:
+        aage_bado
+    agar num > 10:
+        ruko
+
+dikhao(f"Loop sum result: {total_sum}")
+
+# 8. Comprehensions (List, Dict, Set)
+numbers = [1, 2, 3, 4, 5, 6]
+even_squares = [x ** 2 har x mein numbers agar x % 2 == 0]
+num_map = {f"k_{n}": n * 10 har n mein numbers agar n <= 3}
+dikhao(f"Even squares: {even_squares}")
+dikhao(f"Mapped dictionary: {num_map}")
+
+# 9. Generators (yield / upaj)
+kaam number_stream(limit):
+    current = 1
+    jabtak current <= limit:
+        upaj current
+        current = current + 1
+
+stream_result = []
+har val mein number_stream(3):
+    stream_result.append(val)
+dikhao(f"Generator stream values: {stream_result}")
+
+# 10. Asynchronous Programming (asamanantar / intezaar)
+asamanantar kaam fetch_data_async(task_id):
+    intezaar async_sleep(0.01)
+    wapas f"Payload for task {task_id}"
+
+async_msg = async_run(fetch_data_async(42))
+dikhao(f"Async execution output: {async_msg}")
+
+# 11. Structural Pattern Matching (milao / sthiti)
+command = ["export", "json", 500]
+milaao command:
+    vichaar ["export", format_type, limit] agar limit > 100:
+        dikhao(f"[MATCH] Exporting high-volume {format_type} limit: {limit}")
+    vichaar ["export", format_type, _]:
+        dikhao(f"[MATCH] Exporting standard {format_type}")
+    vichaar _:
+        dikhao("[MATCH] Unknown command fallback")
+
+# 12. Exception Handling (koshish / pakdo / antatah)
+koshish:
+    # Test assertion
+    daawa score > 0, "Score must be positive"
+    result = 100 / 0
+pakdo ZeroDivisionError jaise err:
+    dikhao(f"[CAUGHT ERROR] Gracefully captured: {err}")
+antatah:
+    dikhao("[FINALLY] Exception handling block completed.")
+
+# 13. Deletion (mitao)
+temp_dict = {"temp_key": "to_be_deleted", "keep": "active"}
+mitao temp_dict["temp_key"]
+dikhao(f"Dictionary after mitao: {temp_dict}")
+
+dikhao("=== Hinglish Editor Showcase Executed Successfully ===")
