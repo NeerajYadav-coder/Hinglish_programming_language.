@@ -56,6 +56,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     # 1. Interactive REPL if no file provided
     if not args.file:
         try:
+            from ..runtime import install_import_hook
+            install_import_hook()
             start_repl()
             return 0
         except Exception as exc:

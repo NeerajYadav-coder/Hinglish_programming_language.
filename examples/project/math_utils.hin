@@ -1,0 +1,12 @@
+# Math utilities module in Hinglish
+
+kaam jodo(a: int, b: int) -> int:
+    wapas a + b
+
+kaam guna(a: int, b: int) -> int:
+    wapas a * b
+
+kaam kramagunita(n: int) -> int:
+    agar n <= 1:
+        wapas 1
+    wapas n * kramagunita(n - 1)

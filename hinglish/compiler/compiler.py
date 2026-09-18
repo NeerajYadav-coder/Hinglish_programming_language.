@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..ast.nodes import (
     AnnAssign,
+    Assert,
     Assignment,
     AssignmentExpression,
     ASTNode,
@@ -26,6 +27,7 @@ from ..ast.nodes import (
     Complex,
     ComprehensionClause,
     Continue,
+    Delete,
     DictComprehension,
     DictLiteral,
     DoubleStarred,
@@ -40,6 +42,7 @@ from ..ast.nodes import (
     FunctionCall,
     FunctionDefinition,
     GeneratorExpression,
+    Global,
     Identifier,
     If,
     Import,
@@ -61,6 +64,7 @@ from ..ast.nodes import (
     MatchStar,
     MatchValue,
     NoneLiteral,
+    Nonlocal,
     Parameter,
     Pass,
     Program,
@@ -242,7 +246,8 @@ class HinglishCompiler:
             lines.extend(self._compile_body_lines(stmt.body, indent_level + 1, hin_line))
             for h in stmt.handlers:
                 h_hin = h.start_pos.line if h.start_pos else hin_line
-                clause = f"{indent}except"
+                except_kw = "except*" if getattr(h, "is_star", False) else "except"
+                clause = f"{indent}{except_kw}"
                 if h.type is not None:
                     clause += f" {self.compile_expression(h.type)}"
                     if h.name:
@@ -259,6 +264,23 @@ class HinglishCompiler:
                 lines.append((f"{indent}finally:", fin_hin))
                 lines.extend(self._compile_body_lines(stmt.finally_body, indent_level + 1, fin_hin))
             return lines
+
+        if isinstance(stmt, Global):
+            return [(f"{indent}global {', '.join(stmt.names)}", hin_line)]
+
+        if isinstance(stmt, Nonlocal):
+            return [(f"{indent}nonlocal {', '.join(stmt.names)}", hin_line)]
+
+        if isinstance(stmt, Assert):
+            test_code = self.compile_expression(stmt.test)
+            if stmt.msg is not None:
+                msg_code = self.compile_expression(stmt.msg)
+                return [(f"{indent}assert {test_code}, {msg_code}", hin_line)]
+            return [(f"{indent}assert {test_code}", hin_line)]
+
+        if isinstance(stmt, Delete):
+            targets_code = [self.compile_expression(t) for t in stmt.targets]
+            return [(f"{indent}del {', '.join(targets_code)}", hin_line)]
 
         if isinstance(stmt, Raise):
             if stmt.exc is not None:
@@ -391,12 +413,13 @@ class HinglishCompiler:
         return "\n".join(lines)
 
     def _compile_comprehension_clauses(self, clauses: List[ComprehensionClause]) -> str:
-        """Compiles comprehension clauses ('for ... in ... if ...')."""
+        """Compiles comprehension clauses ('for ... in ... if ...' or 'async for ...')."""
         parts: List[str] = []
         for clause in clauses:
             target_str = self.compile_expression(clause.target)
             iter_str = self.compile_expression(clause.iterable)
-            parts.append(f"for {target_str} in {iter_str}")
+            for_kw = "async for" if getattr(clause, "is_async", False) else "for"
+            parts.append(f"{for_kw} {target_str} in {iter_str}")
             for cond in clause.conditions:
                 cond_str = self.compile_expression(cond)
                 parts.append(f"if {cond_str}")

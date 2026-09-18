@@ -86,9 +86,16 @@ def run_file(
     globals_dict: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Reads, compiles, and executes a .hin script file."""
-    file_path = Path(path)
+    file_path = Path(path).resolve()
     if not file_path.is_file():
         raise FileNotFoundError(f"Hinglish file not found: {path}")
+
+    from .importer import install_import_hook
+    install_import_hook()
+
+    file_dir = str(file_path.parent)
+    if file_dir not in sys.path:
+        sys.path.insert(0, file_dir)
 
     source_code = file_path.read_text(encoding="utf-8")
     return run(source_code, filename=str(file_path), globals_dict=globals_dict)

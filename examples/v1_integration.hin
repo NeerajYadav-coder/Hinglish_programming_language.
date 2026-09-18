@@ -1,0 +1,165 @@
+# Hinglish v1.0 Final Integration Program: Task Analytics & Processing Engine (KaryaEngine)
+# Demonstrates seamless composition of all major Hinglish language capabilities
+
+laao asyncio, json, math
+
+# 1. Global state & configuration
+TOTAL_PROCESSED: int = 0
+
+kaam record_completion(count: int):
+    sarvavyapi TOTAL_PROCESSED
+    TOTAL_PROCESSED = TOTAL_PROCESSED + count
+
+# 2. Custom Decorator
+kaam audit_log(func):
+    kaam wrapper(*args, **kwargs):
+        res = func(*args, **kwargs)
+        wapas res
+    wapas wrapper
+
+# 3. Context Manager
+varg EngineSession:
+    kaam __init__(self, session_id: str):
+        self.session_id = session_id
+        self.active = galat
+
+    kaam __enter__(self):
+        self.active = sahi
+        dikhao(f"Session '{self.session_id}' started.")
+        wapas self
+
+    kaam __exit__(self, exc_type, exc_val, tb):
+        self.active = galat
+        dikhao(f"Session '{self.session_id}' closed.")
+
+# 4. OOP: Inheritance, Encapsulation, Properties, Annotations
+varg Task:
+    __match_args__ = ("task_id", "status", "priority")
+
+    kaam __init__(self, task_id: str, priority: int = 1):
+        self.task_id = task_id
+        self.priority = priority
+        self.status = "pending"
+        self._duration: float = 0.0
+
+    @property
+    kaam is_high_priority(self) -> bool:
+        wapas self.priority >= 3
+
+    kaam execute(self) -> str:
+        self.status = "completed"
+        wapas f"Task {self.task_id} executed"
+
+varg ComputeTask(Task):
+    kaam __init__(self, task_id: str, payload_size: int, priority: int = 2):
+        self.task_id = task_id
+        self.priority = priority
+        self.status = "pending"
+        self._duration = 0.0
+        self.payload_size = payload_size
+
+    @audit_log
+    kaam execute(self) -> str:
+        # Assert valid payload
+        dawa self.payload_size > 0, "Payload size must be positive"
+        self.status = "completed"
+        self._duration = math.sqrt(float(self.payload_size)) * 0.1
+        wapas f"ComputeTask {self.task_id}: processed {self.payload_size} bytes in {self._duration:.3f}s"
+
+# 5. Generator & Yield
+kaam task_batch_generator(tasks_list, batch_size: int = 2):
+    i = 0
+    jabtak i < lambai(tasks_list):
+        batch = tasks_list[i : i + batch_size]
+        upaj batch
+        i = i + batch_size
+
+# 6. Async / Await & Async Comprehension
+asamanantar kaam async_metric_producer(limit: int):
+    val = 1
+    jabtak val <= limit:
+        intezaar asyncio.sleep(0.001)
+        upaj val
+        val = val + 1
+
+asamanantar kaam run_async_pipeline():
+    # Async list comprehension with filter
+    processed_metrics = [m * 10 har intezaar m mein async_metric_producer(4) agar m % 2 == 0]
+    wapas processed_metrics
+
+# 7. Main Workflow Execution
+asamanantar kaam main():
+    dikhao("==================================================")
+    dikhao("   KARYA ENGINE — HINGLISH v1.0 INTEGRATION DEMO  ")
+    dikhao("==================================================")
+
+    saath EngineSession("SESSION-001") jaise session:
+        # Create tasks
+        t1 = Task("T-101", priority=1)
+        t2 = ComputeTask("C-201", payload_size=256, priority=3)
+        t3 = ComputeTask("C-202", payload_size=1024, priority=4)
+        t4 = Task("T-104", priority=2)
+        tasks = [t1, t2, t3, t4]
+
+        # Walrus operator in conditional
+        agar (num_tasks := lambai(tasks)) > 0:
+            dikhao(f"Loaded {num_tasks} tasks for processing.")
+
+        # Lambda and sorting
+        sorted_tasks = sorted(tasks, key=sookshm t: t.priority)
+
+        # Comprehension filtering high priority task IDs
+        high_prio_ids = [t.task_id har t mein sorted_tasks agar t.is_high_priority]
+        dikhao(f"High-priority task IDs: {high_prio_ids}")
+
+        # Advanced unpacking
+        *standard_tasks, top_task = sorted_tasks
+        dikhao(f"Top priority task: {top_task.task_id} (P={top_task.priority})")
+
+        # Generator consumption and execution
+        har batch mein task_batch_generator(sorted_tasks, 2):
+            har t mein batch:
+                out = t.execute()
+                dikhao(f"  [RUN] {out}")
+
+        # Structural Pattern Matching
+        dikhao("\nEvaluating task outcomes via structural pattern matching:")
+        har t mein sorted_tasks:
+            milaao t:
+                vichaar ComputeTask(tid, psize, 4):
+                    dikhao(f"  [MATCH] Critical compute task {tid} with payload {psize}")
+                vichaar Task(tid, "completed", p) agar p >= 3:
+                    dikhao(f"  [MATCH] High priority completed task {tid}")
+                vichaar Task(tid, "completed", _):
+                    dikhao(f"  [MATCH] Standard completed task {tid}")
+                vichaar _:
+                    dikhao(f"  [MATCH] Other task status")
+
+        # Exception handling
+        dikhao("\nTesting exception handling:")
+        koshish:
+            bad_task = ComputeTask("INVALID", payload_size=-10)
+            bad_task.execute()
+        pakdo AssertionError jaise err:
+            dikhao(f"  [CAUGHT] Expected assertion error: {err}")
+        antatah:
+            dikhao("  [FINALLY] Error-handling test clean-up completed.")
+
+        # Del statement
+        temp_cache = {"session": session.session_id, "temp_data": [1, 2, 3]}
+        mitao temp_cache["temp_data"]
+        dikhao(f"Cache after mitao: {temp_cache}")
+
+        # Record metrics using global
+        record_completion(lambai(sorted_tasks))
+        dikhao(f"Total processed recorded globally: {TOTAL_PROCESSED}")
+
+        # Await async pipeline
+        dikhao("\nAwaiting async pipeline results:")
+        async_results = intezaar run_async_pipeline()
+        dikhao(f"Async pipeline metrics: {async_results}")
+
+    dikhao("\n=== KaryaEngine execution completed successfully! ===")
+
+# Run everything
+asyncio.run(main())

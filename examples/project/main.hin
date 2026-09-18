@@ -1,0 +1,25 @@
+# Main application module importing math_utils and models
+
+se math_utils laao jodo, guna, kramagunita
+se models laao User, Order
+
+dikhao("=== Hinglish Multi-File Project ===")
+
+# 1. Test functions from math_utils
+sum_val = jodo(15, 25)
+fact_val = kramagunita(5)
+dikhao(f"Math utils -> 15 + 25 = {sum_val}, 5! = {fact_val}")
+
+# 2. Test classes from models
+admin = User("Aarav", "admin")
+order = Order("Laptop", 55000.0, 2)
+dikhao(f"User: {admin.name} ({admin.role}), Order total: {order.total}")
+
+# 3. Test pattern matching on imported model
+milaao admin:
+    vichaar User(name, "admin"):
+        dikhao(f"Authorized administrator: {name}")
+    vichaar User(name, _):
+        dikhao(f"Regular user: {name}")
+
+dikhao("Multi-file project executed successfully!")

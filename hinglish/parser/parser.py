@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ..ast.nodes import (
     AnnAssign,
+    Assert,
     Assignment,
     AssignmentExpression,
     ASTNode,
@@ -25,6 +26,7 @@ from ..ast.nodes import (
     Complex,
     ComprehensionClause,
     Continue,
+    Delete,
     DictComprehension,
     DictLiteral,
     DoubleStarred,
@@ -39,6 +41,7 @@ from ..ast.nodes import (
     FunctionCall,
     FunctionDefinition,
     GeneratorExpression,
+    Global,
     Identifier,
     If,
     Import,
@@ -60,6 +63,7 @@ from ..ast.nodes import (
     MatchStar,
     MatchValue,
     NoneLiteral,
+    Nonlocal,
     Parameter,
     Pass,
     Program,
@@ -250,6 +254,14 @@ class HinglishParser:
             return self.parse_decorated_definition()
         if py_kw == "yield":
             return self.parse_yield_statement()
+        if py_kw == "global":
+            return self.parse_global()
+        if py_kw == "nonlocal":
+            return self.parse_nonlocal()
+        if py_kw == "assert":
+            return self.parse_assert()
+        if py_kw == "del":
+            return self.parse_delete()
 
         # Expression or Assignment
         return self.parse_assignment_or_expression_statement()
@@ -575,46 +587,128 @@ class HinglishParser:
         self.expect_statement_terminator()
         return Pass(start_pos=start_tok.start_pos, end_pos=start_tok.end_pos)
 
+    def parse_global(self) -> Global:
+        """Parses global statement: sarvavyapi <name> [, <name>]*"""
+        start_tok = self.advance()
+        names = []
+        name_tok = self.expect(TokenType.IDENTIFIER, "Expected identifier after 'sarvavyapi'")
+        names.append(str(name_tok.value))
+        while self.match(TokenType.COMMA):
+            name_tok = self.expect(TokenType.IDENTIFIER, "Expected identifier after ',' in global statement")
+            names.append(str(name_tok.value))
+        self.expect_statement_terminator()
+        return Global(names=names, start_pos=start_tok.start_pos, end_pos=self.peek().end_pos)
+
+    def parse_nonlocal(self) -> Nonlocal:
+        """Parses nonlocal statement: asthaniya <name> [, <name>]*"""
+        start_tok = self.advance()
+        names = []
+        name_tok = self.expect(TokenType.IDENTIFIER, "Expected identifier after 'asthaniya'")
+        names.append(str(name_tok.value))
+        while self.match(TokenType.COMMA):
+            name_tok = self.expect(TokenType.IDENTIFIER, "Expected identifier after ',' in nonlocal statement")
+            names.append(str(name_tok.value))
+        self.expect_statement_terminator()
+        return Nonlocal(names=names, start_pos=start_tok.start_pos, end_pos=self.peek().end_pos)
+
+    def parse_assert(self) -> Assert:
+        """Parses assert statement: dawa <test> [, <msg>]"""
+        start_tok = self.advance()
+        test = self.parse_expression()
+        msg = None
+        if self.match(TokenType.COMMA):
+            msg = self.parse_expression()
+        self.expect_statement_terminator()
+        return Assert(test=test, msg=msg, start_pos=start_tok.start_pos, end_pos=self.peek().end_pos)
+
+    def parse_delete(self) -> Delete:
+        """Parses del statement: mitao <target> [, <target>]*"""
+        start_tok = self.advance()
+        targets = []
+        target = self.parse_call_subscript_attribute()
+        if not isinstance(target, (Identifier, AttributeAccess, Indexing)):
+            raise self._syntax_error("Cannot delete expression target", start_tok)
+        targets.append(target)
+        while self.match(TokenType.COMMA):
+            t = self.parse_call_subscript_attribute()
+            if not isinstance(t, (Identifier, AttributeAccess, Indexing)):
+                raise self._syntax_error("Cannot delete expression target", self.peek())
+            targets.append(t)
+        self.expect_statement_terminator()
+        return Delete(targets=targets, start_pos=start_tok.start_pos, end_pos=self.peek().end_pos)
+
+    def _parse_dotted_name(self) -> str:
+        """Parses a dotted module name: a.b.c"""
+        tok = self.expect(TokenType.IDENTIFIER, "Expected module or package name")
+        parts = [str(tok.value)]
+        while self.match(TokenType.DOT):
+            part_tok = self.expect(TokenType.IDENTIFIER, "Expected identifier after '.' in module name")
+            parts.append(str(part_tok.value))
+        return ".".join(parts)
+
     def parse_import(self) -> Import:
-        """Parses import statement: laao <module> [jaise <alias>]."""
+        """Parses import statement: laao <module>[ jaise <alias>][, <module2>[ jaise <alias2>]]*."""
         start_tok = self.advance()
         start_pos = start_tok.start_pos
+        names: List[Tuple[str, Optional[str]]] = []
 
-        module_tok = self.expect(TokenType.IDENTIFIER, "Expected module name after 'laao'")
-        alias: Optional[str] = None
-        if self.check_py_keyword("as"):
-            self.advance()  # Consume 'jaise'
-            alias_tok = self.expect(TokenType.IDENTIFIER, "Expected alias name after 'jaise'")
-            alias = str(alias_tok.value)
+        while True:
+            mod_name = self._parse_dotted_name()
+            alias: Optional[str] = None
+            if self.check_py_keyword("as"):
+                self.advance()  # Consume 'jaise'
+                alias_tok = self.expect(TokenType.IDENTIFIER, "Expected alias name after 'jaise'")
+                alias = str(alias_tok.value)
+            names.append((mod_name, alias))
+            if not self.match(TokenType.COMMA):
+                break
 
         self.expect_statement_terminator()
         return Import(
-            names=[(str(module_tok.value), alias)],
+            names=names,
             start_pos=start_pos,
             end_pos=self.peek().end_pos,
         )
 
     def parse_from_import(self) -> FromImport:
-        """Parses from-import statement: se <module> laao <name> [jaise <alias>]."""
+        """Parses from-import statement: se <module> laao <name>[ jaise <alias>][, <name2>[ jaise <alias2>]]*."""
         start_tok = self.advance()
         start_pos = start_tok.start_pos
 
-        module_tok = self.expect(TokenType.IDENTIFIER, "Expected module name after 'se'")
+        dots = 0
+        while self.match(TokenType.DOT):
+            dots += 1
+        module_name = ""
+        if dots > 0:
+            module_name = "." * dots
+            if self.check(TokenType.IDENTIFIER):
+                module_name += self._parse_dotted_name()
+        else:
+            module_name = self._parse_dotted_name()
+
         if not self.check_py_keyword("import"):
             raise self._syntax_error("Expected 'laao' after module name in from-import", self.peek())
         self.advance()  # Consume 'laao'
 
-        name_tok = self.expect(TokenType.IDENTIFIER, "Expected imported name after 'laao'")
-        alias: Optional[str] = None
-        if self.check_py_keyword("as"):
-            self.advance()  # Consume 'jaise'
-            alias_tok = self.expect(TokenType.IDENTIFIER, "Expected alias name after 'jaise'")
-            alias = str(alias_tok.value)
+        names: List[Tuple[str, Optional[str]]] = []
+        if self.match(TokenType.STAR):
+            names.append(("*", None))
+        else:
+            while True:
+                name_tok = self.expect(TokenType.IDENTIFIER, "Expected imported name after 'laao'")
+                alias: Optional[str] = None
+                if self.check_py_keyword("as"):
+                    self.advance()  # Consume 'jaise'
+                    alias_tok = self.expect(TokenType.IDENTIFIER, "Expected alias name after 'jaise'")
+                    alias = str(alias_tok.value)
+                names.append((str(name_tok.value), alias))
+                if not self.match(TokenType.COMMA):
+                    break
 
         self.expect_statement_terminator()
         return FromImport(
-            module=str(module_tok.value),
-            names=[(str(name_tok.value), alias)],
+            module=module_name,
+            names=names,
             start_pos=start_pos,
             end_pos=self.peek().end_pos,
         )
@@ -659,9 +753,15 @@ class HinglishParser:
         while not self.is_at_end() and self.check_py_keyword("except"):
             handler_tok = self.advance()  # Consume 'pakdo'
             h_start_pos = handler_tok.start_pos
+            is_star = False
+            if self.match(TokenType.STAR):
+                is_star = True
 
             exc_type: Optional[Expression] = None
             exc_name: Optional[str] = None
+
+            if is_star and self.check(TokenType.COLON):
+                raise self._syntax_error("except* clause requires an exception type", handler_tok)
 
             if not self.check(TokenType.COLON):
                 exc_type = self.parse_expression()
@@ -677,6 +777,7 @@ class HinglishParser:
                     type=exc_type,
                     name=exc_name,
                     body=handler_body,
+                    is_star=is_star,
                     start_pos=h_start_pos,
                     end_pos=h_end_pos,
                 )
@@ -842,14 +943,29 @@ class HinglishParser:
         return ExpressionStatement(expr=node, start_pos=start_pos, end_pos=end_pos)
 
     def parse_comprehension_clauses(self) -> List[ComprehensionClause]:
-        """Parses one or more 'har <target> mein <iterable> [agar <condition>]*' clauses."""
+        """Parses one or more 'har [intezaar] <target> mein <iterable> [agar <condition>]*' clauses."""
         clauses: List[ComprehensionClause] = []
 
         while not self.is_at_end() and self.check_py_keyword("for"):
             for_tok = self.advance()  # Consume 'har'
             clause_start = for_tok.start_pos
+            is_async = False
+            if self.check_py_keyword("await"):
+                self.advance()  # Consume 'intezaar'
+                is_async = True
 
-            target = self.parse_primary()
+            target_elts = [self.parse_primary()]
+            while self.match(TokenType.COMMA):
+                target_elts.append(self.parse_primary())
+            if len(target_elts) == 1:
+                target = target_elts[0]
+            else:
+                target = TupleLiteral(
+                    elements=target_elts,
+                    start_pos=target_elts[0].start_pos,
+                    end_pos=target_elts[-1].end_pos,
+                )
+
             if not self.check_py_keyword("in"):
                 raise self._syntax_error("Expected 'mein' or 'andar' after comprehension variable", self.peek())
             self.advance()  # Consume 'mein' / 'andar'
@@ -868,6 +984,7 @@ class HinglishParser:
                     target=target,
                     iterable=iterable,
                     conditions=conditions,
+                    is_async=is_async,
                     start_pos=clause_start,
                     end_pos=clause_end,
                 )
@@ -942,12 +1059,31 @@ class HinglishParser:
         end_pos = elements[-1].end_pos if elements else first.end_pos
         return TupleLiteral(elements=elements, start_pos=first.start_pos, end_pos=end_pos)
 
+    def _validate_assignment_target(self, target: Expression, token: Token) -> None:
+        """Validates that an expression is a valid assignment target."""
+        if isinstance(target, (Identifier, AttributeAccess, Indexing)):
+            return
+        if isinstance(target, (TupleLiteral, ListLiteral)):
+            starred_count = 0
+            for elt in target.elements:
+                if isinstance(elt, Starred):
+                    starred_count += 1
+                    if starred_count > 1:
+                        raise self._syntax_error("multiple starred expressions in assignment", token)
+                    self._validate_assignment_target(elt.value, token)
+                else:
+                    self._validate_assignment_target(elt, token)
+            return
+        raise self._syntax_error(f"cannot assign to {type(target).__name__.lower()}", token)
+
     def parse_assignment_or_expression_statement(self) -> Statement:
         """Parses an assignment statement, annotated assignment, or expression statement."""
         expr = self.parse_expression_or_tuple(allow_starred=True)
 
         # 1. Annotated assignment: target: annotation [= value]
         if self.match(TokenType.COLON):
+            if not isinstance(expr, (Identifier, AttributeAccess, Indexing)):
+                raise self._syntax_error("illegal target for variable annotation", self.peek())
             annotation = self.parse_expression()
             value = None
             if self.match(TokenType.ASSIGN):
@@ -981,6 +1117,7 @@ class HinglishParser:
 
         if self.peek().type in assign_tokens:
             op_tok = self.advance()
+            self._validate_assignment_target(expr, op_tok)
             op_str = assign_tokens[op_tok.type]
             value = self.parse_expression_or_tuple()
             self.expect_statement_terminator()

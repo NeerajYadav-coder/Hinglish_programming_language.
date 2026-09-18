@@ -1,0 +1,21 @@
+# Data models module in Hinglish
+
+varg User:
+    __match_args__ = ("name", "role")
+
+    kaam __init__(self, name: str, role: str = "member"):
+        self.name = name
+        self.role = role
+
+    kaam to_dict(self):
+        wapas {"name": self.name, "role": self.role}
+
+varg Order:
+    kaam __init__(self, item: str, price: float, quantity: int = 1):
+        self.item = item
+        self.price = price
+        self.quantity = quantity
+
+    @property
+    kaam total(self) -> float:
+        wapas self.price * self.quantity

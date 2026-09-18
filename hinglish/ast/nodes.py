@@ -145,6 +145,35 @@ class Continue(Statement):
 
 
 @dataclass
+class Global(Statement):
+    """Global statement: sarvavyapi <name1> [, <name2>]*"""
+
+    names: List[str] = field(default_factory=list)
+
+
+@dataclass
+class Nonlocal(Statement):
+    """Nonlocal statement: asthaniya <name1> [, <name2>]*"""
+
+    names: List[str] = field(default_factory=list)
+
+
+@dataclass
+class Assert(Statement):
+    """Assert statement: dawa <test> [, <msg>]"""
+
+    test: Expression = field(default_factory=Expression)
+    msg: Optional[Expression] = None
+
+
+@dataclass
+class Delete(Statement):
+    """Delete statement: mitao <target1> [, <target2>]*"""
+
+    targets: List[Expression] = field(default_factory=list)
+
+
+@dataclass
 class Import(Statement):
     """Import statement: laao <module> [jaise <alias>]"""
 
@@ -171,11 +200,12 @@ class ClassDefinition(Statement):
 
 @dataclass
 class ExceptHandler(ASTNode):
-    """Exception handler clause: pakdo [<type>] [jaise <name>]: <body>"""
+    """Exception handler clause: pakdo [*] [<type>] [jaise <name>]: <body>"""
 
     type: Optional[Expression] = None
     name: Optional[str] = None
     body: List[Statement] = field(default_factory=list)
+    is_star: bool = False
 
 
 @dataclass
@@ -380,11 +410,12 @@ class Slice(Expression):
 
 @dataclass
 class ComprehensionClause(ASTNode):
-    """A 'for ... in ... [if ...]*' clause in a comprehension."""
+    """A 'for ... in ... [if ...]*' or 'async for ... in ... [if ...]*' clause in a comprehension."""
 
     target: Expression = field(default_factory=Expression)
     iterable: Expression = field(default_factory=Expression)
     conditions: List[Expression] = field(default_factory=list)
+    is_async: bool = False
 
 
 @dataclass

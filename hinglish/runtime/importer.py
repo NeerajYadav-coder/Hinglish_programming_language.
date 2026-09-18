@@ -1,0 +1,79 @@
+"""Import hook for loading .hin Hinglish modules directly using Python's import machinery."""
+
+import importlib.abc
+import importlib.machinery
+import sys
+from pathlib import Path
+from typing import List, Optional, Sequence, Union
+
+from ..compiler import HinglishCompiler
+from ..parser import parse
+
+
+class HinglishSourceLoader(importlib.abc.SourceLoader):
+    """Loader that compiles Hinglish (.hin) source code into Python bytecode."""
+
+    def __init__(self, fullname: str, path: str) -> None:
+        self.fullname = fullname
+        self.path = path
+
+    def get_filename(self, fullname: str) -> str:
+        return self.path
+
+    def get_data(self, path: Union[str, bytes]) -> bytes:
+        with open(path, "rb") as f:
+            return f.read()
+
+    def source_to_code(
+        self,
+        data: bytes,
+        path: Union[str, bytes],
+        _optimize: int = -1,
+    ):
+        source = data.decode("utf-8")
+        tree = parse(source)
+        compiler = HinglishCompiler()
+        py_source, _ = compiler.compile_with_map(tree)
+        return compile(py_source, str(path), "exec")
+
+
+class HinglishPathFinder(importlib.abc.MetaPathFinder):
+    """MetaPathFinder that discovers .hin files on sys.path or package paths."""
+
+    @classmethod
+    def find_spec(
+        cls,
+        fullname: str,
+        path: Optional[Sequence[str]] = None,
+        target: Optional[object] = None,
+    ) -> Optional[importlib.machinery.ModuleSpec]:
+        search_dirs = path if path is not None else sys.path
+        mod_name = fullname.rpartition(".")[-1]
+
+        for entry in search_dirs:
+            candidate = Path(entry) / f"{mod_name}.hin"
+            if candidate.is_file():
+                loader = HinglishSourceLoader(fullname, str(candidate))
+                return importlib.machinery.ModuleSpec(fullname, loader, origin=str(candidate))
+
+        return None
+
+
+def install_import_hook() -> None:
+    """Installs HinglishPathFinder into sys.meta_path if not already present."""
+    for finder in sys.meta_path:
+        if finder is HinglishPathFinder or (
+            isinstance(finder, type) and issubclass(finder, HinglishPathFinder)
+        ):
+            return
+    sys.meta_path.insert(0, HinglishPathFinder)
+
+
+def uninstall_import_hook() -> None:
+    """Removes HinglishPathFinder from sys.meta_path."""
+    sys.meta_path = [
+        f for f in sys.meta_path
+        if f is not HinglishPathFinder and not (
+            isinstance(f, type) and issubclass(f, HinglishPathFinder)
+        )
+    ]

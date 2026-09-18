@@ -153,8 +153,9 @@ class KeywordRegistry:
         self.register_alias("fenko", "uthav")         # 'fenko' -> raise
         self.register_alias("lekar", "saath")         # 'lekar' -> with
         self.register_alias("roop_mein", "jaise")     # 'roop_mein' -> as
-        self.register_alias("aayat", "laao")          # 'aayat' -> import
         self.register_alias("mitao", "hatao")         # 'mitao' -> del
+        self.register_alias("dawa", "daawa")          # 'dawa' -> assert
+        self.register_alias("asthaniya", "asthanik")  # 'asthaniya' -> nonlocal
         self.register_alias("milaao", "milao")        # 'milaao' -> match
         self.register_alias("vichaar", "sthiti")      # 'vichaar' -> case
 
