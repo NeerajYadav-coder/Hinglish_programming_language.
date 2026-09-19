@@ -1,0 +1,36 @@
+# Hinglish Conformance Corpus: 07_context_managers.hin
+# Tests: saath ... jaise ..., __enter__, __exit__, nested context managers
+varg ManagedResource:
+    kaam __init__(self, tag: str):
+        self.tag = tag
+        self.entered = galat
+        self.exited = galat
+
+    kaam __enter__(self):
+        self.entered = sahi
+        wapas self
+
+    kaam __exit__(self, exc_type, exc_val, exc_tb):
+        self.exited = sahi
+        wapas galat
+
+
+# 1. Basic single context manager
+res1 = ManagedResource("res_1")
+daawa res1.entered == galat
+daawa res1.exited == galat
+saath res1 jaise r:
+    daawa r.entered == sahi
+    daawa r.exited == galat
+daawa res1.exited == sahi
+# 2. Nested context managers
+res_a = ManagedResource("res_a")
+res_b = ManagedResource("res_b")
+
+saath res_a jaise a:
+    saath res_b jaise b:
+        daawa a.entered == sahi
+        daawa b.entered == sahi
+daawa res_a.exited == sahi
+daawa res_b.exited == sahi
+dikhao("07_context_managers: PASS")

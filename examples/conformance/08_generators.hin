@@ -1,0 +1,40 @@
+# Hinglish Conformance Corpus: 08_generators.hin
+# Tests: upaj (yield), upaj se (yield from), bare upaj, iteration
+
+# 1. Fibonacci generator
+kaam count_down(n):
+    jabtak n > 0:
+        upaj n
+        n = n - 1
+
+
+vals = list(count_down(4))
+daawa vals == [4, 3, 2, 1]
+
+
+# 2. Bare upaj yields None
+kaam yield_none_then_val():
+    upaj
+    upaj 99
+
+
+g = yield_none_then_val()
+daawa next(g) hai kuch_nahi
+daawa next(g) == 99
+
+
+# 3. Delegating generator with upaj se
+kaam sub_seq():
+    upaj "a"
+    upaj "b"
+
+
+kaam main_seq():
+    upaj "start"
+    upaj se sub_seq()
+    upaj "end"
+
+
+full_seq = list(main_seq())
+daawa full_seq == ["start", "a", "b", "end"]
+dikhao("08_generators: PASS")

@@ -1,0 +1,48 @@
+# Hinglish Conformance Corpus: 13_advanced_expressions.hin
+# Tests: Walrus operator (:=), extended unpacking, literal/call unpacking, operator precedence
+
+# 1. Walrus operator (:=) in condition
+items = [10, 20, 30, 40, 50]
+agar ((total_count := lambai(items))) > 3:
+    daawa total_count == 5
+# Walrus operator in while condition
+loop_val = 0
+acc = []
+jabtak ((loop_val := loop_val + 1)) <= 3:
+    acc.append(loop_val)
+daawa acc == [1, 2, 3]
+# 2. Extended unpacking with middle star
+first, *middle, last = [1, 2, 3, 4, 5]
+daawa first == 1
+daawa middle == [2, 3, 4]
+daawa last == 5
+# Extended unpacking with leading star
+*lead, tail = (100, 200, 300)
+daawa lead == [100, 200]
+daawa tail == 300
+# 3. Literal unpacking
+base_list = [2, 3]
+full_list = [1, *base_list, 4]
+daawa full_list == [1, 2, 3, 4]
+base_dict = {"a": 1, "b": 2}
+merged_dict = {**base_dict, "b": 20, "c": 30}
+daawa merged_dict == {"a": 1, "b": 20, "c": 30}
+set_a = {1, 2}
+merged_set = {*set_a, 3, 4}
+daawa lambai(merged_set) == 4
+
+
+# 4. Function call unpacking
+kaam sum_three(a, b, c):
+    wapas a + b + c
+
+
+args = [10, 20]
+kwargs = {"c": 30}
+daawa sum_three(*args, **kwargs) == 60
+# 5. Operator precedence & nested boolean logic
+calc = 2 + 3 * 4 << 1
+daawa calc == 28
+bool_eval = 10 > 5 aur 20 < 30 ya 100 == 0
+daawa bool_eval hai sahi
+dikhao("13_advanced_expressions: PASS")

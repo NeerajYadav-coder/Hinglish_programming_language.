@@ -1,0 +1,18 @@
+# Hinglish Conformance Corpus: 12_imports.hin
+# Tests: laao, laao ... jaise ..., se ... laao ... jaise ..., Python stdlib interoperability
+
+# 1. Whole module import
+laao math
+daawa math.floor(3.99) == 3
+daawa math.ceil(3.01) == 4
+# 2. Whole module import with alias
+laao json jaise j
+encoded = j.dumps({"status": "ok", "code": 200})
+decoded = j.loads(encoded)
+daawa decoded["status"] == "ok"
+daawa decoded["code"] == 200
+# 3. Selective import from module with alias
+se math laao sqrt jaise root, pi jaise PI_VAL
+daawa root(144) == 12.0
+daawa PI_VAL > 3.14
+dikhao("12_imports: PASS")

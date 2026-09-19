@@ -1,0 +1,39 @@
+# Hinglish Conformance Corpus: 04_data_structures.hin
+# Tests: Lists, tuples, dicts, sets, comprehensions, generator expressions, del (hatao)
+
+# 1. Lists: indexing, slicing, manipulation
+nums = [10, 20, 30, 40, 50]
+daawa nums[0] == 10
+daawa nums[-1] == 50
+daawa nums[1:4] == [20, 30, 40]
+nums.append(60)
+daawa lambai(nums) == 6
+# 2. Tuples
+point = (10, 20, 30)
+px, py, pz = point
+daawa px == 10
+daawa py == 20
+daawa pz == 30
+# 3. Dictionaries and hatao (del)
+user = {"name": "Aarav", "role": "admin", "temp": "delete_me"}
+daawa user["name"] == "Aarav"
+hatao user["temp"]
+daawa "temp" nahi mein user
+# 4. Sets
+unique_vals = {1, 2, 3, 2, 1}
+daawa lambai(unique_vals) == 3
+daawa 2 mein unique_vals
+# 5. List comprehension with condition
+squares = [x * x har x mein nums agar x <= 30]
+daawa squares == [100, 400, 900]
+# 6. Dict comprehension
+cube_map = {x: x ** 3 har x mein [1, 2, 3]}
+daawa cube_map[3] == 27
+# 7. Set comprehension
+mod_set = {x % 3 har x mein [1, 2, 3, 4, 5, 6]}
+daawa mod_set == {0, 1, 2}
+# 8. Generator expression
+gen_exp = (x * 2 har x mein [1, 2, 3])
+gen_list = list(gen_exp)
+daawa gen_list == [2, 4, 6]
+dikhao("04_data_structures: PASS")

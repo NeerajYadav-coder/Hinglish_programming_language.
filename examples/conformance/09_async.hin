@@ -1,0 +1,54 @@
+# Hinglish Conformance Corpus: 09_async.hin
+# Tests: asamanantar kaam, intezaar, saath intezaar, har intezaar, async generators
+laao asyncio
+
+
+# 1. Async coroutine
+asamanantar kaam compute_square(x: int) -> int:
+    intezaar asyncio.sleep(0.001)
+    wapas x * x
+
+
+# 2. Async generator
+asamanantar kaam async_range(limit: int):
+    val = 1
+    jabtak val <= limit:
+        intezaar asyncio.sleep(0.001)
+        upaj val
+        val = val + 1
+
+
+# 3. Async context manager
+varg AsyncLock:
+    kaam __init__(self):
+        self.acquired = galat
+
+    asamanantar kaam __aenter__(self):
+        intezaar asyncio.sleep(0.001)
+        self.acquired = sahi
+        wapas self
+
+    asamanantar kaam __aexit__(self, exc_type, exc, tb):
+        intezaar asyncio.sleep(0.001)
+        self.acquired = galat
+
+
+# 4. Main runner
+asamanantar kaam main():
+    # Coroutine await
+    ans = intezaar compute_square(6)
+    daawa ans == 36
+    # Async with
+    lock = AsyncLock()
+    asamanantar saath lock jaise l:
+        daawa l.acquired == sahi
+    daawa lock.acquired == galat
+    # Async for
+    collected = []
+    asamanantar har item mein async_range(3):
+        collected.append(item)
+    daawa collected == [1, 2, 3]
+
+
+asyncio.run(main())
+dikhao("09_async: PASS")

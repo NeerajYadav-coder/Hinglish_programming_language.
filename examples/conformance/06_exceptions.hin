@@ -1,0 +1,36 @@
+# Hinglish Conformance Corpus: 06_exceptions.hin
+# Tests: koshish, pakdo, warna, antatah, uthav, daawa
+
+# 1. Raising and catching custom exception
+kaam safe_div(a, b):
+    agar b == 0:
+        uthav ValueError("Shunya se bhag nahi de sakte")
+    wapas a / b
+
+
+caught = galat
+koshish:
+    safe_div(10, 0)
+pakdo ValueError jaise err:
+    caught = sahi
+antatah:
+    cleanup_done = sahi
+
+daawa caught == sahi
+daawa cleanup_done == sahi
+# 2. Try-except with else (warna) and finally (antatah)
+step = 0
+koshish:
+    val = safe_div(10, 2)
+pakdo ValueError:
+    step = -1
+warna:
+    step = 1
+antatah:
+    step = step + 1
+
+daawa val == 5.0
+daawa step == 2
+# 3. Assert (daawa) statement
+daawa 100 > 50, "100 must be greater than 50"
+dikhao("06_exceptions: PASS")

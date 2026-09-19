@@ -24,3 +24,6 @@ htmlcov/
 
 # Node / Web
 node_modules/
+
+# Runtime / test artifacts
+sample_output.txt

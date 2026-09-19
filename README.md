@@ -154,6 +154,11 @@ hinglish tokens script.hin           # Inspect token stream
 hinglish ast script.hin              # Inspect Abstract Syntax Tree
 hinglish transpile script.hin        # Transpile to Python source
 hinglish transpile script.hin -o out.py  # Save Python output to file
+hinglish format script.hin           # Format Hinglish source in-place
+hinglish format script.hin --check   # Check if formatted without modifying (exit code 0/1)
+hinglish format script.hin -o out.hin # Save formatted source to another file
+hinglish lint script.hin [files...]  # Static analysis and lint diagnostics
+hinglish lint script.hin --check     # Lint check (exits 1 if warnings/errors found)
 hinglish repl                        # Start interactive REPL
 
 # Shorthand Syntax (100% Backward Compatible)
@@ -161,6 +166,8 @@ hinglish script.hin                  # Execute script directly
 hinglish --tokens script.hin         # Inspect tokens
 hinglish --ast script.hin            # Inspect AST
 hinglish --transpile script.hin      # Transpile to stdout
+hinglish --format script.hin         # Format in-place
+hinglish --lint script.hin           # Run linter
 hinglish --version                   # Show version (1.0.0)
 ```
 
@@ -175,6 +182,21 @@ cat script.hin | hinglish
 # Explicit stdin execution
 echo 'dikhao("Namaste")' | hinglish -
 ```
+
+---
+
+## Developer Tooling & Ecosystem
+
+Hinglish provides a complete developer ecosystem:
+
+- **VS Code Extension (`vscode-hinglish`)**:
+  - Full TextMate syntax highlighting for all 64 Hinglish keywords, strings, decorators, and builtins.
+  - **Language Server Protocol (LSP)**: `hinglish-lsp` entrypoint providing hover documentation, real-time diagnostics, document symbols, and auto-completion.
+  - **Debug Adapter Protocol (DAP)**: `hinglish-dap` entrypoint with breakpoints, variable inspection, call stack navigation, and step debugging.
+  - **Document Formatter & Linter**: Integrated source formatting and static analysis directly within VS Code.
+- **Official Documentation Website (`docs/`)**:
+  - Full modern interactive documentation, language guide, interactive comparison tables, keyword glossary, and real-world examples.
+
 
 ---
 

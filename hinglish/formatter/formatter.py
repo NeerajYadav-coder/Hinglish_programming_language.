@@ -304,7 +304,10 @@ class HinglishFormatter:
 
         # Assignment
         elif isinstance(stmt, Assignment):
-            target_str = self._format_expr(stmt.target)
+            if isinstance(stmt.target, TupleLiteral) and stmt.target.elements:
+                target_str = ", ".join(self._format_expr(e) for e in stmt.target.elements)
+            else:
+                target_str = self._format_expr(stmt.target)
             val_str = self._format_expr(stmt.value)
             inline = self._get_inline_comment(end_line) or self._get_inline_comment(stmt_line)
             output_lines.append(f"{indent_str}{target_str} {stmt.op} {val_str}{inline}")
@@ -333,7 +336,19 @@ class HinglishFormatter:
                 self._format_statement_list(elif_clause.body, output_lines, indent_level + 1)
 
             if stmt.else_body is not None:
-                else_start = stmt.elif_clauses[-1].end_pos.line if stmt.elif_clauses else (stmt.body[-1].end_pos.line if stmt.body else stmt_line)
+                if stmt.elif_clauses:
+                    last_elif = stmt.elif_clauses[-1]
+                    if last_elif.end_pos:
+                        else_start = last_elif.end_pos.line
+                    elif last_elif.body and last_elif.body[-1].end_pos:
+                        else_start = last_elif.body[-1].end_pos.line
+                    else:
+                        else_start = stmt_line
+                elif stmt.body and stmt.body[-1].end_pos:
+                    else_start = stmt.body[-1].end_pos.line
+                else:
+                    else_start = stmt_line
+
                 self._emit_standalone_comments_before(else_start + 1, output_lines, indent_level)
                 else_inline = self._get_inline_comment(else_start + 1) or self._get_inline_comment(end_line)
                 output_lines.append(f"{indent_str}warna:{else_inline}")
@@ -648,7 +663,15 @@ class HinglishFormatter:
                 return f"({self._format_expr(expr.elements[0])},)"
             return f"({', '.join(self._format_expr(e) for e in expr.elements)})"
         if isinstance(expr, DictLiteral):
-            pairs = [f"{self._format_expr(k)}: {self._format_expr(v)}" for k, v in zip(expr.keys, expr.values)]
+            pairs = []
+            for k, v in zip(expr.keys, expr.values):
+                if k is None or isinstance(k, NoneLiteral) or isinstance(v, DoubleStarred):
+                    if isinstance(v, DoubleStarred):
+                        pairs.append(f"**{self._format_expr(v.value)}")
+                    else:
+                        pairs.append(f"**{self._format_expr(v)}")
+                else:
+                    pairs.append(f"{self._format_expr(k)}: {self._format_expr(v)}")
             return f"{{{', '.join(pairs)}}}"
         if isinstance(expr, SetLiteral):
             if not expr.elements:
@@ -683,7 +706,16 @@ class HinglishFormatter:
             prec = get_precedence(expr)
             left_str = self._format_expr(expr.left, parent_prec=prec, is_right=False)
             right_str = self._format_expr(expr.right, parent_prec=prec, is_right=True)
-            return f"{left_str} {expr.op} {right_str}"
+            op = expr.op
+            if op == "in":
+                op = "mein"
+            elif op == "not in":
+                op = "nahi mein"
+            elif op == "is":
+                op = "hai"
+            elif op in ("is not", "hai nahi"):
+                op = "nahi hai"
+            return f"{left_str} {op} {right_str}"
 
         if isinstance(expr, BooleanOperation):
             prec = get_precedence(expr)

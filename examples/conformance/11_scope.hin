@@ -1,0 +1,37 @@
+# Hinglish Conformance Corpus: 11_scope.hin
+# Tests: sarvavyapi (global), asthanik (nonlocal), lexical scopes
+
+# 1. Module-level global variable mutated via sarvavyapi
+module_counter = 10
+
+
+kaam bump_global():
+    sarvavyapi module_counter
+    module_counter = module_counter + 5
+
+
+bump_global()
+bump_global()
+daawa module_counter == 20
+
+
+# 2. Outer function scope mutated via asthanik (nonlocal)
+kaam make_accumulator(initial):
+    total = initial
+
+    kaam add_val(amount):
+        asthanik total
+        total = total + amount
+        wapas total
+
+    wapas add_val
+
+
+acc = make_accumulator(100)
+daawa acc(20) == 120
+daawa acc(30) == 150
+# 3. Independent closures maintain distinct state
+acc2 = make_accumulator(0)
+daawa acc2(5) == 5
+daawa acc(0) == 150
+dikhao("11_scope: PASS")

@@ -320,11 +320,13 @@ class HinglishParser:
                     raise self._syntax_error("Expected condition expression after 'warna_agar'", self.peek())
                 elif_cond = self.parse_expression()
                 elif_body = self.parse_block("warna_agar")
+                elif_end_pos = elif_body[-1].end_pos if (elif_body and elif_body[-1].end_pos) else (elif_cond.end_pos or elif_tok.end_pos)
                 elif_clauses.append(
                     ElifClause(
                         condition=elif_cond,
                         body=elif_body,
                         start_pos=elif_tok.start_pos,
+                        end_pos=elif_end_pos,
                     )
                 )
             else:
@@ -1280,6 +1282,31 @@ class HinglishParser:
                 end_pos=right.end_pos,
             )
 
+        if self.check_py_keyword("not"):
+            next_kw = self.get_py_keyword(self.peek(1))
+            if next_kw == "is":
+                self.advance()
+                self.advance()
+                right = self.parse_bitwise_or()
+                return Comparison(
+                    left=left,
+                    op="is not",
+                    right=right,
+                    start_pos=left.start_pos,
+                    end_pos=right.end_pos,
+                )
+            elif next_kw == "in":
+                self.advance()
+                self.advance()
+                right = self.parse_bitwise_or()
+                return Comparison(
+                    left=left,
+                    op="not in",
+                    right=right,
+                    start_pos=left.start_pos,
+                    end_pos=right.end_pos,
+                )
+
         if self.check_py_keyword("in"):
             op_tok = self.advance()
             right = self.parse_bitwise_or()
@@ -1543,7 +1570,7 @@ class HinglishParser:
                 # Empty tuple ()
                 return TupleLiteral(elements=[], start_pos=start_pos, end_pos=self.tokens[self.cursor - 1].end_pos)
 
-            first = self.parse_expression()
+            first = self.parse_starred_or_expression()
 
             # Generator expression: (elt har x mein iter [agar cond]*)
             if self.check_py_keyword("for"):
@@ -1560,7 +1587,7 @@ class HinglishParser:
                 # Tuple literal (first, ...)
                 elements = [first]
                 while not self.check(TokenType.RPAREN) and not self.is_at_end():
-                    elements.append(self.parse_expression())
+                    elements.append(self.parse_starred_or_expression())
                     if not self.match(TokenType.COMMA):
                         break
                 rparen = self.expect(TokenType.RPAREN, "Expected ')' after tuple elements")

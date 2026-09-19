@@ -1,0 +1,50 @@
+# Hinglish Conformance Corpus: 03_functions.hin
+# Tests: Defaults, positional/keyword, *args, **kwargs, annotations, closures, lambdas
+
+# 1. Defaults and annotations
+kaam calculate_area(length: float, width: float = 10.0) -> float:
+    wapas length * width
+
+
+daawa calculate_area(5.0) == 50.0
+daawa calculate_area(5.0, 4.0) == 20.0
+
+
+# 2. Positional-only and keyword-only arguments
+kaam process_order(item_id: int, /, quantity: int, *, discount: float = 0.0) -> float:
+    base_price = 100.0 * quantity
+    wapas base_price * (1.0 - discount)
+
+
+daawa process_order(101, 2, discount=0.1) == 180.0
+
+
+# 3. Variadic *args and **kwargs
+kaam build_report(title, *scores, **metadata):
+    total = kul_jod(scores)
+    wapas (title, total, metadata.get("author", "Unknown"))
+
+
+r_title, r_sum, r_auth = build_report("Math", 85, 90, 95, author="Neeraj")
+daawa r_title == "Math"
+daawa r_sum == 270
+daawa r_auth == "Neeraj"
+
+
+# 4. Closures and nested functions
+kaam make_multiplier(factor):
+    kaam multiply(val):
+        wapas val * factor
+    wapas multiply
+
+
+double_fn = make_multiplier(2)
+triple_fn = make_multiplier(3)
+daawa double_fn(10) == 20
+daawa triple_fn(10) == 30
+# 5. Lambda expressions (sookshm)
+square_lambda = sookshm x: x * x
+daawa square_lambda(7) == 49
+add_lambda = sookshm x, y: x + y
+daawa add_lambda(15, 25) == 40
+dikhao("03_functions: PASS")

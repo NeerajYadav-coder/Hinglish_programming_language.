@@ -1,0 +1,45 @@
+# Hinglish Conformance Corpus: 10_pattern_matching.hin
+# Tests: milaao, vichaar, literals, sequences, mappings, class patterns, guards, wildcards
+varg Point:
+    __match_args__ = ("x", "y")
+
+    kaam __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+kaam classify_pattern(val):
+    milao val:
+        vichaar 0:
+            wapas "zero"
+        vichaar sahi:
+            wapas "boolean_true"
+        vichaar kuch_nahi:
+            wapas "none"
+        vichaar 200 | 201:
+            wapas "success_code"
+        vichaar [x, y] agar x == y:
+            wapas f"diagonal_{x}"
+        vichaar [head, *tail]:
+            wapas f"seq_head_{head}_tail_len_{lambai(tail)}"
+        vichaar {"type": "user", "name": name}:
+            wapas f"user_{name}"
+        vichaar Point(0, 0):
+            wapas "origin_point"
+        vichaar Point(x, y):
+            wapas f"point_{x}_{y}"
+        vichaar _:
+            wapas "unknown"
+
+
+daawa classify_pattern(0) == "zero"
+daawa classify_pattern(sahi) == "boolean_true"
+daawa classify_pattern(kuch_nahi) == "none"
+daawa classify_pattern(201) == "success_code"
+daawa classify_pattern([7, 7]) == "diagonal_7"
+daawa classify_pattern([1, 2, 3, 4]) == "seq_head_1_tail_len_3"
+daawa classify_pattern({"type": "user", "name": "Neeraj"}) == "user_Neeraj"
+daawa classify_pattern(Point(0, 0)) == "origin_point"
+daawa classify_pattern(Point(3, 4)) == "point_3_4"
+daawa classify_pattern("random_data") == "unknown"
+dikhao("10_pattern_matching: PASS")

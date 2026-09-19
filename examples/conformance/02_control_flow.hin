@@ -1,0 +1,54 @@
+# Hinglish Conformance Corpus: 02_control_flow.hin
+# Tests: agar, warna_agar, warna, jabtak, har, ruko, aage_bado, chhod_do, wapas
+
+# 1. agar / warna_agar / warna conditional chains
+kaam classify_num(n):
+    agar n > 0:
+        wapas "positive"
+    warna_agar n < 0:
+        wapas "negative"
+    warna:
+        wapas "zero"
+
+
+daawa classify_num(10) == "positive"
+daawa classify_num(-5) == "negative"
+daawa classify_num(0) == "zero"
+# 2. jabtak loop with ruko and aage_bado
+count = 0
+evens = []
+jabtak count < 10:
+    count = count + 1
+    agar count % 2 != 0:
+        aage_bado
+    agar count > 6:
+        ruko
+    evens.append(count)
+
+daawa evens == [2, 4, 6]
+# 3. har loop with range, break, continue, and chhod_do
+odd_sum = 0
+har i mein kram(1, 10):
+    agar i % 2 == 0:
+        aage_bado
+    agar i > 7:
+        ruko
+    agar i == 5:
+        chhod_do
+    odd_sum = odd_sum + i
+
+daawa odd_sum == 1 + 3 + 5 + 7
+
+
+# 4. Nested loops with early return
+kaam find_pair_sum(target):
+    har i mein [1, 2, 3]:
+        har j mein [1, 2, 3]:
+            agar i + j == target:
+                wapas (i, j)
+    wapas kuch_nahi
+
+
+daawa find_pair_sum(5) == (2, 3)
+daawa find_pair_sum(100) hai kuch_nahi
+dikhao("02_control_flow: PASS")

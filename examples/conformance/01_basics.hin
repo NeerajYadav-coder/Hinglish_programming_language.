@@ -1,0 +1,55 @@
+# Hinglish Conformance Corpus: 01_basics.hin
+# Tests: Literals, Arithmetic, Comparisons, Logical Ops, Membership, Identity
+
+# 1. Literals
+int_val = 42
+float_val = 3.14159
+str_val = "Namaste, Duniya!"
+bool_true = sahi
+bool_false = galat
+none_val = kuch_nahi
+shunya_val = kuch_nahi
+
+daawa bool_true hai sahi
+daawa bool_false hai galat
+daawa none_val hai kuch_nahi
+daawa shunya_val hai kuch_nahi
+# 2. Arithmetic operations
+add_res = 10 + 5
+sub_res = 20 - 7
+mul_res = 6 * 7
+div_res = 15 / 3
+floordiv_res = 17 // 3
+mod_res = 19 % 4
+pow_res = 2 ** 8
+
+daawa add_res == 15
+daawa sub_res == 13
+daawa mul_res == 42
+daawa div_res == 5.0
+daawa floordiv_res == 5
+daawa mod_res == 3
+daawa pow_res == 256
+# 3. Bitwise operations
+bit_and = 12 & 10
+bit_or = 12 | 10
+bit_xor = 12 ^ 10
+bit_shift = 1 << 4
+
+daawa bit_and == 8
+daawa bit_or == 14
+daawa bit_xor == 6
+daawa bit_shift == 16
+# 4. Comparison and Logical operators
+daawa 10 > 5 aur 20 >= 20
+daawa 5 < 10 aur 15 <= 20
+daawa 10 != 20 aur 42 == 42
+daawa 10 < 5 ya 20 > 10
+daawa nahi galat
+# 5. Membership & Identity
+items = [1, 2, 3, 4, 5]
+daawa 3 mein items
+daawa 99 nahi mein items
+daawa bool_true hai sahi
+daawa bool_true nahi hai galat
+dikhao("01_basics: PASS")

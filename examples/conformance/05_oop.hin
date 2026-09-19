@@ -1,0 +1,49 @@
+# Hinglish Conformance Corpus: 05_oop.hin
+# Tests: Classes (varg/shreni), inheritance, constructors, methods, decorators (@property, @staticmethod)
+varg Animal:
+    kaam __init__(self, name: str):
+        self.name = name
+
+    kaam speak(self) -> str:
+        wapas "Generic sound"
+
+
+varg Dog(Animal):
+    kaam __init__(self, name: str, breed: str):
+        self.name = name
+        self.breed = breed
+
+    kaam speak(self) -> str:
+        wapas f"{self.name} says Bhao!"
+
+
+varg BankAccount:
+    kaam __init__(self, owner: str, initial_balance: float = 0.0):
+        self.owner = owner
+        self._balance = initial_balance
+
+    @property
+    kaam balance(self) -> float:
+        wapas self._balance
+
+    kaam deposit(self, amount: float):
+        agar amount > 0:
+            self._balance = self._balance + amount
+
+    @staticmethod
+    kaam bank_info() -> str:
+        wapas "National Bank of Hinglish"
+
+
+# 1. Inheritance and polymorphism
+a = Animal("Creature")
+d = Dog("Sheru", "Indie")
+daawa a.speak() == "Generic sound"
+daawa d.speak() == "Sheru says Bhao!"
+daawa d.breed == "Indie"
+# 2. Encapsulation, properties and static methods
+acc = BankAccount("Neeraj", 500.0)
+acc.deposit(250.0)
+daawa acc.balance == 750.0
+daawa BankAccount.bank_info() == "National Bank of Hinglish"
+dikhao("05_oop: PASS")
