@@ -9,7 +9,8 @@ import {
   FileCode2,
   Cpu,
   Layers,
-  Sparkles
+  Sparkles,
+  Bug
 } from 'lucide-react';
 import { NavSection } from '../types';
 
@@ -43,6 +44,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: '/cli', title: 'CLI Reference', titleHi: 'Terminal Commands (CLI)', iconName: 'Terminal' },
       { id: '/multi-file', title: 'Multi-File Projects', titleHi: 'Multi-File Projects', iconName: 'FolderTree' },
       { id: '/vscode', title: 'VS Code Extension', titleHi: 'VS Code Extension', iconName: 'FileCode2' },
+      { id: '/debugger', title: 'Debugger (DAP)', titleHi: 'Debugger & DAP', iconName: 'Bug', badge: 'New' },
     ]
   },
   {
@@ -66,6 +68,7 @@ const renderIcon = (name: string, size = 16) => {
     case 'Cpu': return <Cpu size={size} />;
     case 'Layers': return <Layers size={size} />;
     case 'Sparkles': return <Sparkles size={size} />;
+    case 'Bug': return <Bug size={size} />;
     default: return <BookOpen size={size} />;
   }
 };

@@ -1,21 +1,24 @@
 {
   "name": "hinglish",
   "displayName": "Hinglish Language Support",
-  "description": "Visual Studio Code syntax highlighting and language support for the Hinglish programming language.",
+  "description": "Visual Studio Code syntax highlighting, language server, and debugging support for the Hinglish programming language.",
   "version": "1.0.0",
   "publisher": "neerajyadav",
   "engines": {
     "vscode": "^1.75.0"
   },
   "categories": [
-    "Programming Languages"
+    "Programming Languages",
+    "Debuggers"
   ],
   "keywords": [
     "hinglish",
     "python",
     "syntax",
     "language",
-    "hindi"
+    "hindi",
+    "debugger",
+    "dap"
   ],
   "repository": {
     "type": "git",
@@ -23,7 +26,8 @@
   },
   "main": "./extension.js",
   "activationEvents": [
-    "onLanguage:hinglish"
+    "onLanguage:hinglish",
+    "onDebug"
   ],
   "contributes": {
     "languages": [
@@ -46,9 +50,63 @@
         "path": "./syntaxes/hinglish.tmLanguage.json"
       }
     ],
+    "breakpoints": [
+      {
+        "language": "hinglish"
+      }
+    ],
+    "debuggers": [
+      {
+        "type": "hinglish",
+        "label": "Hinglish Debugger",
+        "languages": [
+          "hinglish"
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Hinglish: Launch Current File",
+            "description": "Debug the currently active Hinglish .hin file",
+            "body": {
+              "type": "hinglish",
+              "request": "launch",
+              "name": "Debug Hinglish (${fileBasename})",
+              "program": "${file}",
+              "stopOnEntry": false
+            }
+          }
+        ],
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "program"
+            ],
+            "properties": {
+              "program": {
+                "type": "string",
+                "description": "Path to the Hinglish .hin file to execute.",
+                "default": "${file}"
+              },
+              "stopOnEntry": {
+                "type": "boolean",
+                "description": "Automatically stop after launching at the entry point of the program.",
+                "default": false
+              },
+              "args": {
+                "type": "array",
+                "description": "Command line arguments passed to the Hinglish program.",
+                "items": {
+                  "type": "string"
+                },
+                "default": []
+              }
+            }
+          }
+        }
+      }
+    ],
     "configuration": {
       "type": "object",
-      "title": "Hinglish Language Server",
+      "title": "Hinglish Language Tooling",
       "properties": {
         "hinglish.lsp.enabled": {
           "type": "boolean",
@@ -74,6 +132,16 @@
           ],
           "default": "off",
           "description": "Traces the communication between VS Code and the Hinglish language server."
+        },
+        "hinglish.dap.path": {
+          "type": "string",
+          "default": "hinglish-dap",
+          "description": "Path to hinglish-dap executable, or command to start the Hinglish Debug Adapter."
+        },
+        "hinglish.dap.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "description": "Python interpreter path used as fallback to execute python -m hinglish.dap."
         }
       }
     }

@@ -10,6 +10,7 @@ import { CliPage } from './pages/CliPage';
 import { MultiFilePage } from './pages/MultiFilePage';
 import { PythonCompatPage } from './pages/PythonCompatPage';
 import { VsCodePage } from './pages/VsCodePage';
+import { DebuggerPage } from './pages/DebuggerPage';
 import { ArchitecturePage } from './pages/ArchitecturePage';
 import { PhilosophyPage } from './pages/PhilosophyPage';
 import { KeywordReferencePage } from './pages/KeywordReferencePage';
@@ -76,6 +77,8 @@ export const App: React.FC = () => {
         return <PythonCompatPage />;
       case '/vscode':
         return <VsCodePage />;
+      case '/debugger':
+        return <DebuggerPage />;
       case '/architecture':
         return <ArchitecturePage />;
       case '/philosophy':
