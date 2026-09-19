@@ -1,47 +1,61 @@
 # Hinglish Language Support for Visual Studio Code
 
-This extension provides syntax highlighting, language identification, and editor configurations for the **Hinglish** programming language (`.hin`).
+This extension provides comprehensive language support and Language Server Protocol (LSP) integration for the **Hinglish** programming language (`.hin`).
 
 ---
 
 ## Features
 
-- **Automatic File Association**: Recognizes `.hin` files automatically and assigns the `hinglish` language mode.
-- **Rich Syntax Highlighting**:
-  - Declarations: `kaam` (functions), `varg` / `shreni` (classes), `sookshm` (lambda)
-  - Control Flow: `agar`, `warna`, `warna_agar`, `jabtak`, `har`, `mein`, `ruko`, `aage_bado`, `chhod_do`
-  - Pattern Matching: `milao` / `milaao`, `sthiti` / `vichaar`
-  - Asynchronous: `asamanantar`, `intezaar`
-  - Exception Handling: `koshish`, `pakdo`, `sambhalo`, `antatah`, `uthav`, `daawa`
-  - Scoping & Imports: `sarvavyapi`, `asthanik`, `saath`, `hatao`, `laao`, `se`, `jaise`
-  - Literals & Builtins: `sahi`, `galat`, `shunya`, `kuch_nahi`, `dikhao`, `lambai`, `kram`
-  - Decorators: `@property` and custom decorators
-  - String Interpolation: Formatted strings (`f"..."`, `f'...'`) with embedded expression highlighting
-- **Smart Language Configuration**:
-  - Line comments (`#`)
-  - Auto-closing pairs for parentheses `()`, brackets `[]`, braces `{}`, and quotes
-  - Pythonic block indentation rules for colons `:` and dedent keywords (`warna`, `pakdo`, etc.)
+### 1. Real-Time Language Server (LSP)
+- **Live Diagnostics**: Immediate lexical and syntax error checking as you type, with exact line and column indicators.
+- **Contextual Autocompletion**:
+  - Full keyword registry (`agar`, `kaam`, `har`, `shreni`, etc.) with Python target information.
+  - Built-in functions (`dikhao`, `pucho`, `lambai`, `prakar`, etc.).
+  - Code snippets for functions, classes, conditionals, loops, and exception handling.
+  - Local variables, parameters, and function/class symbols.
+- **Hover Documentation**:
+  - Inspect keywords and built-in functions with explanation and Python target equivalent.
+  - Function and class signatures with parameter lists.
+- **Go to Definition**:
+  - Jump to definitions for local functions, classes, variables, and parameters.
+  - Cross-file navigation across sibling `.hin` files and imported modules (`laao utils`, `se models laao User`).
+- **Document Outline & Breadcrumbs**: Hierarchical symbol tree of classes, methods, functions, and variables.
+- **Find References**: Locate all usages of any identifier across the document.
+- **Safe Rename Symbol**: Rename identifiers safely across the document.
+
+### 2. Syntax Highlighting & Language Configuration
+- **Automatic File Association**: Recognizes `.hin` files automatically.
+- **Rich Syntax Highlighting**: Declarations, control flow, pattern matching, async constructs, exceptions, literals, and f-strings.
+- **Smart Indentation & Brackets**: Auto-closing pairs and Pythonic block indentation rules.
+
+---
+
+## Configuration Settings
+
+| Setting | Type | Default | Description |
+|---|---|---|---|
+| `hinglish.lsp.enabled` | `boolean` | `true` | Enable Hinglish Language Server for intelligent editing features. |
+| `hinglish.lsp.path` | `string` | `"hinglish-lsp"` | Path to the `hinglish-lsp` command. |
+| `hinglish.lsp.pythonPath` | `string` | `"python3"` | Python interpreter used for fallback (`python3 -m hinglish.lsp`). |
+| `hinglish.lsp.trace.server` | `string` | `"off"` | Traces communication between VS Code and the server (`off`, `messages`, `verbose`). |
 
 ---
 
 ## Installation
 
-### From VSIX Package
+### Prerequisites
+Make sure Hinglish is installed in your Python environment:
+```bash
+pip install hinglish
+# or install from source
+pip install -e .
+```
 
-1. Package the extension:
-   ```bash
-   cd vscode-hinglish
-   vsce package --no-dependencies
-   ```
-2. Install in VS Code:
-   ```bash
-   code --install-extension hinglish-1.0.0.vsix
-   ```
-   Or open VS Code, go to the Extensions view (`Ctrl+Shift+X`), select the `...` menu, and choose **Install from VSIX...**.
-
----
-
-## Current Scope & Roadmap
-
-- **Step 10C (Current)**: Declarative TextMate syntax highlighting and language configuration.
-- **Future Phases**: Language Server Protocol (LSP) for autocompletion, hover documentation, semantic diagnostics, and go-to-definition.
+### Install Extension in VS Code
+```bash
+code --install-extension vscode-hinglish/hinglish-1.0.0.vsix
+```
+Or in VS Code:
+1. Press `Ctrl+Shift+X` (or `Cmd+Shift+X` on macOS) to open the Extensions view.
+2. Click the `...` menu in the top-right of the Extensions panel.
+3. Select **Install from VSIX...** and choose `hinglish-1.0.0.vsix`.
