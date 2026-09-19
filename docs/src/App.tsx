@@ -12,6 +12,7 @@ import { PythonCompatPage } from './pages/PythonCompatPage';
 import { VsCodePage } from './pages/VsCodePage';
 import { DebuggerPage } from './pages/DebuggerPage';
 import { FormatterPage } from './pages/FormatterPage';
+import { LinterPage } from './pages/LinterPage';
 import { ArchitecturePage } from './pages/ArchitecturePage';
 import { PhilosophyPage } from './pages/PhilosophyPage';
 import { KeywordReferencePage } from './pages/KeywordReferencePage';
@@ -82,6 +83,8 @@ export const App: React.FC = () => {
         return <DebuggerPage />;
       case '/formatter':
         return <FormatterPage />;
+      case '/linter':
+        return <LinterPage />;
       case '/architecture':
         return <ArchitecturePage />;
       case '/philosophy':

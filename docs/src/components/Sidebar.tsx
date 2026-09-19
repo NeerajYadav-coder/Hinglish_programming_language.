@@ -11,7 +11,8 @@ import {
   Layers,
   Sparkles,
   Bug,
-  AlignLeft
+  AlignLeft,
+  ShieldAlert
 } from 'lucide-react';
 import { NavSection } from '../types';
 
@@ -46,7 +47,8 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: '/multi-file', title: 'Multi-File Projects', titleHi: 'Multi-File Projects', iconName: 'FolderTree' },
       { id: '/vscode', title: 'VS Code Extension', titleHi: 'VS Code Extension', iconName: 'FileCode2' },
       { id: '/debugger', title: 'Debugger (DAP)', titleHi: 'Debugger & DAP', iconName: 'Bug' },
-      { id: '/formatter', title: 'Formatter', titleHi: 'Code Formatter', iconName: 'AlignLeft', badge: 'New' },
+      { id: '/formatter', title: 'Formatter', titleHi: 'Code Formatter', iconName: 'AlignLeft' },
+      { id: '/linter', title: 'Linter', titleHi: 'Static Analysis', iconName: 'ShieldAlert', badge: 'New' },
     ]
   },
   {
@@ -72,6 +74,7 @@ const renderIcon = (name: string, size = 16) => {
     case 'Sparkles': return <Sparkles size={size} />;
     case 'Bug': return <Bug size={size} />;
     case 'AlignLeft': return <AlignLeft size={size} />;
+    case 'ShieldAlert': return <ShieldAlert size={size} />;
     default: return <BookOpen size={size} />;
   }
 };

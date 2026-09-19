@@ -11,6 +11,7 @@ from ..compiler import compile as compile_hinglish
 from ..exceptions import HinglishError
 from ..formatter import format_source
 from ..lexer import format_tokens, tokenize
+from ..linter import lint_source
 from ..parser import parse
 from ..runtime import run, run_file, start_repl
 
@@ -28,6 +29,7 @@ Commands:
   ast <file>              Parse and print Abstract Syntax Tree
   transpile <file> [-o]   Transpile to Python source code
   format <file> [-o] [--check] Format Hinglish script to canonical style
+  lint <file>... [--check] Run static analysis and lint diagnostics
   repl                    Start interactive REPL
 
 Shorthand Usage:
@@ -36,6 +38,7 @@ Shorthand Usage:
   hinglish --ast <file>      Inspect AST
   hinglish --transpile <file> Transpile to Python
   hinglish --format <file>   Format script in-place
+  hinglish --lint <file>     Lint script
   hinglish                   Start interactive REPL (or execute stdin if piped)
 """,
     )
@@ -48,13 +51,19 @@ Shorthand Usage:
         "file",
         nargs="?",
         metavar="command|file",
-        help="Subcommand (run, tokens, ast, transpile, format, repl) or path to .hin script.",
+        help="Subcommand (run, tokens, ast, transpile, format, lint, repl) or path to .hin script.",
     )
     parser.add_argument(
         "sub_file",
         nargs="?",
         metavar="file",
         help="Path to the Hinglish script when using a subcommand.",
+    )
+    parser.add_argument(
+        "extra_files",
+        nargs="*",
+        metavar="extra_files",
+        help="Additional file paths when using multi-file subcommands like lint.",
     )
     parser.add_argument(
         "-o", "--output",
@@ -81,9 +90,14 @@ Shorthand Usage:
         help="Format the file to canonical Hinglish syntax.",
     )
     parser.add_argument(
+        "--lint",
+        action="store_true",
+        help="Run static analysis and lint diagnostics on file.",
+    )
+    parser.add_argument(
         "--check",
         action="store_true",
-        help="Check if file is formatted without writing changes. Exits with 0 if formatted, 1 if changes needed.",
+        help="Check if file is formatted or check if lint clean without writing changes. Exits with 0 if clean, 1 if changes/findings needed.",
     )
     return parser
 
@@ -102,7 +116,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     sub_file = args.sub_file
 
     # 1. Determine resolved command and target file
-    subcommands = {"run", "tokens", "ast", "transpile", "repl", "format"}
+    subcommands = {"run", "tokens", "ast", "transpile", "repl", "format", "lint"}
     if raw_cmd in subcommands:
         command = raw_cmd
         file_arg = sub_file
@@ -115,6 +129,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             command = "transpile"
         elif args.format:
             command = "format"
+        elif args.lint:
+            command = "lint"
         elif raw_cmd:
             command = "run"
         else:
@@ -139,6 +155,55 @@ def main(argv: Optional[List[str]] = None) -> int:
         except Exception as exc:
             print(f"REPL Error: {exc}", file=sys.stderr)
             return 1
+
+    # 2.5 Handle Lint command
+    if command == "lint":
+        target_files = []
+        if file_arg:
+            target_files.append(file_arg)
+        if getattr(args, "extra_files", None):
+            target_files.extend(args.extra_files)
+
+        if not target_files:
+            if not sys.stdin.isatty():
+                target_files = ["-"]
+            else:
+                print("Error: Subcommand 'lint' requires a script file argument or standard input ('-').", file=sys.stderr)
+                return 2
+
+        total_findings = 0
+        error_findings = 0
+
+        for target in target_files:
+            if target == "-":
+                filename = "<stdin>"
+                try:
+                    src = sys.stdin.read()
+                except Exception as exc:
+                    print(f"Error reading standard input: {exc}", file=sys.stderr)
+                    return 2
+            else:
+                target_path = Path(target)
+                if not target_path.is_file():
+                    print(f"Error: File not found: {target}", file=sys.stderr)
+                    return 2
+                filename = str(target_path)
+                try:
+                    src = target_path.read_text(encoding="utf-8")
+                except Exception as exc:
+                    print(f"Error reading {target}: {exc}", file=sys.stderr)
+                    return 2
+
+            diags = lint_source(src, filename=filename)
+            for d in diags:
+                total_findings += 1
+                if d.severity == "error":
+                    error_findings += 1
+                print(d.format_cli())
+
+        if args.check:
+            return 1 if total_findings > 0 else 0
+        return 1 if error_findings > 0 else 0
 
     # 3. Validate file argument for file-based commands
     if command in {"run", "tokens", "ast", "transpile", "format"} and not file_arg:

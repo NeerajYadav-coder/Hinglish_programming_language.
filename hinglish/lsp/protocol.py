@@ -126,15 +126,19 @@ class Diagnostic:
     range: Range
     message: str
     severity: int = DiagnosticSeverity.Error
+    code: Optional[Union[int, str]] = None
     source: str = "hinglish"
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        d: Dict[str, Any] = {
             "range": self.range.to_dict(),
             "message": self.message,
             "severity": self.severity,
             "source": self.source,
         }
+        if self.code is not None:
+            d["code"] = self.code
+        return d
 
 
 @dataclass

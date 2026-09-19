@@ -103,13 +103,12 @@ class HinglishAnalyzer:
     # -------------------------------------------------------------------------
 
     def get_diagnostics(self, doc: Document) -> List[Diagnostic]:
-        """Analyzes the document for lexical and grammatical errors."""
+        """Analyzes the document for syntax errors and static analysis lint diagnostics."""
         try:
             # First pass: lexing
             tokens = tokenize(doc.text, registry=self.registry, include_comments=False)
             # Second pass: parsing
-            parse(tokens, registry=self.registry)
-            return []
+            tree = parse(tokens, registry=self.registry)
         except HinglishError as err:
             line_idx = max(0, (err.line or 1) - 1)
             col_idx = max(0, (err.column or 1) - 1)
@@ -127,11 +126,58 @@ class HinglishAnalyzer:
                     range=rng,
                     message=err.message or str(err),
                     severity=DiagnosticSeverity.Error,
+                    code="syntax-error",
                     source="hinglish",
                 )
             ]
         except Exception:
             # Fallback guard to ensure the language server never crashes
+            return []
+
+        # Third pass: Static analysis linting
+        try:
+            from ..linter import HinglishLinter
+            linter = HinglishLinter(registry=self.registry)
+            lint_diags = linter.lint(tree, filename=doc.uri)
+
+            lsp_diagnostics: List[Diagnostic] = []
+            for ld in lint_diags:
+                line_idx = max(0, ld.line - 1)
+                col_idx = max(0, ld.column - 1)
+                line_content = doc.get_line(line_idx)
+                end_char = (
+                    ld.end_column - 1
+                    if ld.end_column is not None and ld.end_column > ld.column
+                    else col_idx + 1
+                )
+                if line_content and end_char > len(line_content):
+                    end_char = len(line_content)
+                if end_char <= col_idx:
+                    end_char = col_idx + 1
+
+                rng = Range(
+                    start=Position(line=line_idx, character=col_idx),
+                    end=Position(line=line_idx, character=end_char),
+                )
+
+                if ld.severity == "error":
+                    sev = DiagnosticSeverity.Error
+                elif ld.severity == "warning":
+                    sev = DiagnosticSeverity.Warning
+                else:
+                    sev = DiagnosticSeverity.Information
+
+                lsp_diagnostics.append(
+                    Diagnostic(
+                        range=rng,
+                        message=ld.message,
+                        severity=sev,
+                        code=ld.rule_id,
+                        source="hinglish-lint",
+                    )
+                )
+            return lsp_diagnostics
+        except Exception:
             return []
 
     # -------------------------------------------------------------------------
