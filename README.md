@@ -122,7 +122,31 @@ You can also run it via standard Python module invocation:
 python3 -m hinglish hello.hin
 ```
 
-### 2. Interactive REPL
+### 2. Basic Syntax at a Glance
+
+```hinglish
+# Variables and Printing
+naam = "Aarav"
+dikhao(f"Namaste, {naam}!")
+
+# Conditionals (agar, warna_agar, warna)
+agar naam == "Aarav":
+    dikhao("User verified")
+warna_agar naam == "Neeraj":
+    dikhao("Creator verified")
+warna:
+    dikhao("Guest verified")
+
+# Loops (har ... mein ...)
+har i mein kram(1, 4):
+    dikhao(f"Step {i}")
+
+# Functions (kaam, wapas)
+kaam jodo(a: int, b: int) -> int:
+    wapas a + b
+```
+
+### 3. Interactive REPL
 
 Start the interactive Hinglish REPL by running `hinglish` with no arguments:
 
@@ -143,7 +167,7 @@ Value is 10
 >>>
 ```
 
-### 3. CLI Commands & Subcommands
+### 4. CLI Commands & Subcommands
 
 The `hinglish` CLI supports both explicit subcommands and backward-compatible flags:
 
@@ -171,7 +195,7 @@ hinglish --lint script.hin           # Run linter
 hinglish --version                   # Show version (1.0.0)
 ```
 
-### 4. Standard Input (Stdin / Pipelines)
+### 5. Standard Input (Stdin / Pipelines)
 
 Hinglish can read and execute source code directly from pipelines:
 
