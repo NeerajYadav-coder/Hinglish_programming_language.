@@ -377,7 +377,17 @@ class HinglishParser:
         if self.check(TokenType.COLON):
             raise self._syntax_error("Expected loop variable after 'har'", self.peek())
 
-        target = self.parse_primary()
+        target_elts = [self.parse_primary()]
+        while self.match(TokenType.COMMA):
+            target_elts.append(self.parse_primary())
+        if len(target_elts) == 1:
+            target = target_elts[0]
+        else:
+            target = TupleLiteral(
+                elements=target_elts,
+                start_pos=target_elts[0].start_pos,
+                end_pos=target_elts[-1].end_pos,
+            )
 
         # Expect 'mein' or 'andar' (Python target 'in')
         if not self.check_py_keyword("in"):
@@ -870,18 +880,30 @@ class HinglishParser:
         return With(items=items, body=body, is_async=is_async, start_pos=start_pos, end_pos=end_pos)
 
     def parse_async_statement(self) -> Statement:
-        """Parses an async definition: asamanantar kaam <name>(<params>): <body>."""
+        """Parses an async statement: asamanantar kaam/har/saath."""
         start_tok = self.advance()  # Consume 'asamanantar'
         start_pos = start_tok.start_pos
 
-        if not self.check_py_keyword("def"):
-            tok = self.peek()
-            raise self._syntax_error("Expected 'kaam' after 'asamanantar'", tok)
+        if self.check_py_keyword("def"):
+            func = self.parse_function_definition()
+            func.is_async = True
+            func.start_pos = start_pos
+            return func
 
-        func = self.parse_function_definition()
-        func.is_async = True
-        func.start_pos = start_pos
-        return func
+        if self.check_py_keyword("for"):
+            for_node = self.parse_for()
+            for_node.is_async = True
+            for_node.start_pos = start_pos
+            return for_node
+
+        if self.check_py_keyword("with"):
+            with_node = self.parse_with()
+            with_node.is_async = True
+            with_node.start_pos = start_pos
+            return with_node
+
+        tok = self.peek()
+        raise self._syntax_error("Expected 'kaam', 'har', or 'saath' after 'asamanantar'", tok)
 
     def parse_decorated_definition(self) -> Statement:
         """Parses @decorator lines followed by a function or class definition."""
@@ -1485,21 +1507,21 @@ class HinglishParser:
         # 1. Literals
         if tok.type == TokenType.INTEGER:
             self.advance()
-            return Integer(value=int(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+            return Integer(value=int(tok.value), raw_text=tok.raw_text, start_pos=tok.start_pos, end_pos=tok.end_pos)
 
         if tok.type == TokenType.FLOAT:
             self.advance()
-            return Float(value=float(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+            return Float(value=float(tok.value), raw_text=tok.raw_text, start_pos=tok.start_pos, end_pos=tok.end_pos)
 
         if tok.type == TokenType.COMPLEX:
             self.advance()
-            return Complex(value=complex(tok.value), start_pos=tok.start_pos, end_pos=tok.end_pos)
+            return Complex(value=complex(tok.value), raw_text=tok.raw_text, start_pos=tok.start_pos, end_pos=tok.end_pos)
 
         if tok.type == TokenType.STRING:
             self.advance()
             if tok.prefix and "f" in tok.prefix.lower():
                 return self.parse_fstring(tok)
-            return String(value=str(tok.value), prefix=tok.prefix, start_pos=tok.start_pos, end_pos=tok.end_pos)
+            return String(value=str(tok.value), prefix=tok.prefix, raw_text=tok.raw_text, start_pos=tok.start_pos, end_pos=tok.end_pos)
 
         if tok.type == TokenType.BOOLEAN:
             self.advance()
@@ -1861,7 +1883,7 @@ class HinglishParser:
                 )
             )
 
-        return JoinedStr(parts=parts, start_pos=tok.start_pos, end_pos=tok.end_pos)
+        return JoinedStr(parts=parts, raw_text=tok.raw_text, start_pos=tok.start_pos, end_pos=tok.end_pos)
 
     # -------------------------------------------------------------------------
     # Pattern Matching (match / case) Parsing
@@ -1984,28 +2006,28 @@ class HinglishParser:
         if tok.type == TokenType.INTEGER:
             self.advance()
             return MatchValue(
-                value=Integer(value=int(tok.value), start_pos=start_pos, end_pos=tok.end_pos),
+                value=Integer(value=int(tok.value), raw_text=tok.raw_text, start_pos=start_pos, end_pos=tok.end_pos),
                 start_pos=start_pos,
                 end_pos=tok.end_pos,
             )
         if tok.type == TokenType.FLOAT:
             self.advance()
             return MatchValue(
-                value=Float(value=float(tok.value), start_pos=start_pos, end_pos=tok.end_pos),
+                value=Float(value=float(tok.value), raw_text=tok.raw_text, start_pos=start_pos, end_pos=tok.end_pos),
                 start_pos=start_pos,
                 end_pos=tok.end_pos,
             )
         if tok.type == TokenType.COMPLEX:
             self.advance()
             return MatchValue(
-                value=Complex(value=complex(tok.value), start_pos=start_pos, end_pos=tok.end_pos),
+                value=Complex(value=complex(tok.value), raw_text=tok.raw_text, start_pos=start_pos, end_pos=tok.end_pos),
                 start_pos=start_pos,
                 end_pos=tok.end_pos,
             )
         if tok.type == TokenType.STRING:
             self.advance()
             return MatchValue(
-                value=String(value=str(tok.value), start_pos=start_pos, end_pos=tok.end_pos),
+                value=String(value=str(tok.value), raw_text=tok.raw_text, start_pos=start_pos, end_pos=tok.end_pos),
                 start_pos=start_pos,
                 end_pos=tok.end_pos,
             )

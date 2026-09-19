@@ -1,7 +1,7 @@
 {
   "name": "hinglish",
   "displayName": "Hinglish Language Support",
-  "description": "Visual Studio Code syntax highlighting, language server, and debugging support for the Hinglish programming language.",
+  "description": "Visual Studio Code syntax highlighting, language server, formatter, and debugging support for the Hinglish programming language.",
   "version": "1.0.0",
   "publisher": "neerajyadav",
   "engines": {
@@ -9,6 +9,7 @@
   },
   "categories": [
     "Programming Languages",
+    "Formatters",
     "Debuggers"
   ],
   "keywords": [
@@ -17,6 +18,7 @@
     "syntax",
     "language",
     "hindi",
+    "formatter",
     "debugger",
     "dap"
   ],

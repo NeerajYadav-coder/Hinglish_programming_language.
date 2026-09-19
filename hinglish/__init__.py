@@ -7,6 +7,7 @@ __version__ = "1.0.0"
 __author__ = "Neeraj Yadav"
 
 from .compiler import compile
+from .formatter import format_source
 from .keywords import DEFAULT_KEYWORD_REGISTRY, KeywordRegistry
 from .lexer import tokenize
 from .parser import parse
@@ -17,6 +18,7 @@ __all__ = [
     "KeywordRegistry",
     "HinglishREPL",
     "compile",
+    "format_source",
     "parse",
     "run",
     "run_file",

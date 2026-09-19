@@ -9,6 +9,7 @@ from .. import __version__
 from ..ast import format_ast
 from ..compiler import compile as compile_hinglish
 from ..exceptions import HinglishError
+from ..formatter import format_source
 from ..lexer import format_tokens, tokenize
 from ..parser import parse
 from ..runtime import run, run_file, start_repl
@@ -26,6 +27,7 @@ Commands:
   tokens <file>           Tokenize and print token table
   ast <file>              Parse and print Abstract Syntax Tree
   transpile <file> [-o]   Transpile to Python source code
+  format <file> [-o] [--check] Format Hinglish script to canonical style
   repl                    Start interactive REPL
 
 Shorthand Usage:
@@ -33,6 +35,7 @@ Shorthand Usage:
   hinglish --tokens <file>   Inspect tokens
   hinglish --ast <file>      Inspect AST
   hinglish --transpile <file> Transpile to Python
+  hinglish --format <file>   Format script in-place
   hinglish                   Start interactive REPL (or execute stdin if piped)
 """,
     )
@@ -45,7 +48,7 @@ Shorthand Usage:
         "file",
         nargs="?",
         metavar="command|file",
-        help="Subcommand (run, tokens, ast, transpile, repl) or path to .hin script.",
+        help="Subcommand (run, tokens, ast, transpile, format, repl) or path to .hin script.",
     )
     parser.add_argument(
         "sub_file",
@@ -55,7 +58,7 @@ Shorthand Usage:
     )
     parser.add_argument(
         "-o", "--output",
-        help="Write transpiled Python code to specified file instead of stdout.",
+        help="Write transpiled Python code or formatted Hinglish code to specified file instead of stdout / in-place.",
     )
     parser.add_argument(
         "--tokens",
@@ -71,6 +74,16 @@ Shorthand Usage:
         "--transpile",
         action="store_true",
         help="Transpile to valid Python source code and print to stdout.",
+    )
+    parser.add_argument(
+        "--format",
+        action="store_true",
+        help="Format the file to canonical Hinglish syntax.",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Check if file is formatted without writing changes. Exits with 0 if formatted, 1 if changes needed.",
     )
     return parser
 
@@ -89,7 +102,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     sub_file = args.sub_file
 
     # 1. Determine resolved command and target file
-    subcommands = {"run", "tokens", "ast", "transpile", "repl"}
+    subcommands = {"run", "tokens", "ast", "transpile", "repl", "format"}
     if raw_cmd in subcommands:
         command = raw_cmd
         file_arg = sub_file
@@ -100,6 +113,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             command = "ast"
         elif args.transpile:
             command = "transpile"
+        elif args.format:
+            command = "format"
         elif raw_cmd:
             command = "run"
         else:
@@ -126,9 +141,12 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 1
 
     # 3. Validate file argument for file-based commands
-    if command in {"run", "tokens", "ast", "transpile"} and not file_arg:
-        print(f"Error: Subcommand '{command}' requires a script file argument.", file=sys.stderr)
-        return 2
+    if command in {"run", "tokens", "ast", "transpile", "format"} and not file_arg:
+        if command == "format" and not sys.stdin.isatty():
+            file_arg = "-"
+        else:
+            print(f"Error: Subcommand '{command}' requires a script file argument.", file=sys.stderr)
+            return 2
 
     # 4. Handle reading source code (either from stdin '-' or from disk)
     if file_arg == "-":
@@ -190,7 +208,44 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"Compilation error in {file_arg}:\n{err}", file=sys.stderr)
             return 1
 
-    # 8. Direct Execution (File or Stdin)
+    # 8. Format Source Code
+    if command == "format":
+        try:
+            formatted = format_source(source_code)
+        except HinglishError as err:
+            print(f"Format error in {file_arg}:\n{err}", file=sys.stderr)
+            return 1
+        except Exception as exc:
+            print(f"Format error in {file_arg}: {exc}", file=sys.stderr)
+            return 1
+
+        if args.check:
+            if formatted == source_code:
+                return 0
+            else:
+                print(f"File would be reformatted: {file_arg}", file=sys.stderr)
+                return 1
+
+        if args.output:
+            out_path = Path(args.output)
+            try:
+                out_path.write_text(formatted, encoding="utf-8")
+                return 0
+            except Exception as exc:
+                print(f"Error writing to {args.output}: {exc}", file=sys.stderr)
+                return 1
+        elif file_arg == "-":
+            sys.stdout.write(formatted)
+            return 0
+        else:
+            try:
+                target_path.write_text(formatted, encoding="utf-8")
+                return 0
+            except Exception as exc:
+                print(f"Error writing to {file_arg}: {exc}", file=sys.stderr)
+                return 1
+
+    # 9. Direct Execution (File or Stdin)
     try:
         if target_path is not None:
             run_file(target_path)

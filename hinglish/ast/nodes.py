@@ -259,6 +259,7 @@ class Integer(Expression):
     """Integer literal value."""
 
     value: int = 0
+    raw_text: Optional[str] = None
 
 
 @dataclass
@@ -266,6 +267,7 @@ class Float(Expression):
     """Floating point literal value."""
 
     value: float = 0.0
+    raw_text: Optional[str] = None
 
 
 @dataclass
@@ -273,6 +275,7 @@ class Complex(Expression):
     """Complex number literal value."""
 
     value: complex = 0j
+    raw_text: Optional[str] = None
 
 
 @dataclass
@@ -281,6 +284,7 @@ class String(Expression):
 
     value: str = ""
     prefix: Optional[str] = None
+    raw_text: Optional[str] = None
 
 
 @dataclass
@@ -297,6 +301,7 @@ class JoinedStr(Expression):
     """F-string consisting of string literals and formatted values: f"..."."""
 
     parts: List[Expression] = field(default_factory=list)
+    raw_text: Optional[str] = None
 
 
 @dataclass

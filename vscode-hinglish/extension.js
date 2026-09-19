@@ -68,6 +68,31 @@ function activate(context) {
                 );
             });
         });
+    } else {
+        // Fallback Document Formatting Provider when LSP is disabled
+        const { execFile } = require('child_process');
+        context.subscriptions.push(
+            vscode.languages.registerDocumentFormattingEditProvider('hinglish', {
+                provideDocumentFormattingEdits(document) {
+                    return new Promise((resolve) => {
+                        const pythonPath = config.get('lsp.pythonPath', 'python3');
+                        const proc = execFile(pythonPath, ['-m', 'hinglish.cli', 'format', '-'], (err, stdout) => {
+                            if (err || !stdout) {
+                                resolve([]);
+                            } else {
+                                const fullRange = new vscode.Range(
+                                    document.positionAt(0),
+                                    document.positionAt(document.getText().length)
+                                );
+                                resolve([vscode.TextEdit.replace(fullRange, stdout)]);
+                            }
+                        });
+                        proc.stdin.write(document.getText());
+                        proc.stdin.end();
+                    });
+                }
+            })
+        );
     }
 
     // -------------------------------------------------------------------------

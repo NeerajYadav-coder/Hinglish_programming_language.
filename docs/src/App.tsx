@@ -11,6 +11,7 @@ import { MultiFilePage } from './pages/MultiFilePage';
 import { PythonCompatPage } from './pages/PythonCompatPage';
 import { VsCodePage } from './pages/VsCodePage';
 import { DebuggerPage } from './pages/DebuggerPage';
+import { FormatterPage } from './pages/FormatterPage';
 import { ArchitecturePage } from './pages/ArchitecturePage';
 import { PhilosophyPage } from './pages/PhilosophyPage';
 import { KeywordReferencePage } from './pages/KeywordReferencePage';
@@ -79,6 +80,8 @@ export const App: React.FC = () => {
         return <VsCodePage />;
       case '/debugger':
         return <DebuggerPage />;
+      case '/formatter':
+        return <FormatterPage />;
       case '/architecture':
         return <ArchitecturePage />;
       case '/philosophy':

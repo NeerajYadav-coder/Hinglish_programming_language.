@@ -103,6 +103,7 @@ class HinglishLanguageServer:
                     "documentSymbolProvider": True,
                     "referencesProvider": True,
                     "renameProvider": True,
+                    "documentFormattingProvider": True,
                 },
                 "serverInfo": {
                     "name": "hinglish-lsp",
@@ -213,6 +214,33 @@ class HinglishLanguageServer:
                 self.send_response(
                     msg_id, result=edit.to_dict() if edit else None
                 )
+
+        elif method == "textDocument/formatting":
+            uri = params.get("textDocument", {}).get("uri", "")
+            doc = self.documents.get_document(uri)
+            if doc is None:
+                self.send_response(msg_id, result=[])
+            else:
+                from ..formatter import format_source
+                try:
+                    formatted = format_source(doc.source)
+                    if formatted == doc.source:
+                        self.send_response(msg_id, result=[])
+                    else:
+                        lines = doc.lines
+                        end_line = max(0, len(lines) - 1)
+                        end_char = len(lines[end_line]) if lines else 0
+                        edit = {
+                            "range": {
+                                "start": {"line": 0, "character": 0},
+                                "end": {"line": end_line + 1, "character": 0},
+                            },
+                            "newText": formatted,
+                        }
+                        self.send_response(msg_id, result=[edit])
+                except Exception:
+                    # Fail safely on syntax error or invalid code
+                    self.send_response(msg_id, result=[])
 
         else:
             # Unhandled request

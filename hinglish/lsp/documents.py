@@ -18,6 +18,11 @@ class Document:
         self.lines: List[str] = text.splitlines(keepends=True)
         self.file_path: Optional[Path] = self._uri_to_path(uri)
 
+    @property
+    def source(self) -> str:
+        """Alias for text property."""
+        return self.text
+
     def _uri_to_path(self, uri: str) -> Optional[Path]:
         """Converts file:// URI to a local Path object."""
         if uri.startswith("file://"):
