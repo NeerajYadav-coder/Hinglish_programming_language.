@@ -22,6 +22,11 @@ def get_default_globals() -> Dict[str, Any]:
         "kuch_nahi": None,
         "shunya": None,
         "khol": open,
+        "lambai": len,
+        "ginti": range,
+        "jod": sum,
+        "sab": all,
+        "koi": any,
     }
 
 

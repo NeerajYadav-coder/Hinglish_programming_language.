@@ -375,6 +375,30 @@ class BooleanOperation(Expression):
 
 
 @dataclass
+class IfExp(Expression):
+    """Inline conditional expression: body 'agar' condition 'warna' orelse (e.g. x agar cond warna y)."""
+
+    body: Expression = field(default_factory=Expression)
+    condition: Expression = field(default_factory=Expression)
+    orelse: Expression = field(default_factory=Expression)
+
+    @property
+    def test(self) -> Expression:
+        return self.condition
+
+    @property
+    def true_expression(self) -> Expression:
+        return self.body
+
+    @property
+    def false_expression(self) -> Expression:
+        return self.orelse
+
+
+ConditionalExpression = IfExp
+
+
+@dataclass
 class FunctionCall(Expression):
     """Function call expression: func(arg1, arg2, kw=val)."""
 

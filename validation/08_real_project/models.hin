@@ -1,0 +1,51 @@
+# Domain models for real-world project validation
+varg OrderValidationError(Exception):
+    kaam __init__(self, message: str):
+        self.message = message
+        super().__init__(message)
+
+
+varg Customer:
+    kaam __init__(self, customer_id: str, name: str, email: str, tier: str = "standard"):
+        self.customer_id = customer_id
+        self.name = name
+        self.email = email
+        self.tier = tier
+
+
+varg OrderItem:
+    kaam __init__(self, sku: str, title: str, unit_price: float, qty: int):
+        agar qty <= 0:
+            uthav OrderValidationError(f"Invalid quantity {qty} for SKU {sku}")
+        self.sku = sku
+        self.title = title
+        self.unit_price = unit_price
+        self.qty = qty
+
+    @property
+    kaam total(self) -> float:
+        wapas self.unit_price * self.qty
+
+
+varg Order:
+    kaam __init__(self, order_id: str, customer: Customer, items: list):
+        agar len(items) == 0:
+            uthav OrderValidationError("Order must have at least one item.")
+        self.order_id = order_id
+        self.customer = customer
+        self.items = items
+        self.discount_rate = 0.0
+        self.tax_rate = 0.0
+
+    kaam compute_subtotal(self) -> float:
+        wapas sum([item.total har item mein self.items])
+
+    kaam compute_discount(self) -> float:
+        wapas self.compute_subtotal() * self.discount_rate
+
+    kaam compute_tax(self) -> float:
+        taxable_amount = self.compute_subtotal() - self.compute_discount()
+        wapas taxable_amount * self.tax_rate
+
+    kaam compute_grand_total(self) -> float:
+        wapas self.compute_subtotal() - self.compute_discount() + self.compute_tax()

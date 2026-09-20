@@ -44,6 +44,7 @@ from ..ast.nodes import (
     Global,
     Identifier,
     If,
+    IfExp,
     Import,
     Indexing,
     Integer,
@@ -966,6 +967,22 @@ class HinglishParser:
         node = Yield(value=val, start_pos=start_pos, end_pos=end_pos)
         return ExpressionStatement(expr=node, start_pos=start_pos, end_pos=end_pos)
 
+    def _is_python_for_token(self) -> bool:
+        """Returns True if the next token is an identifier 'for' (likely a Python-style comprehension mistake)."""
+        if not self.is_at_end():
+            tok = self.peek()
+            return tok.type == TokenType.IDENTIFIER and tok.value == "for"
+        return False
+
+    def _comprehension_hint_error(self, example: str) -> HinglishError:
+        """Generates a helpful diagnostic when Python-style 'for ... in ...' comprehension syntax is encountered."""
+        tok = self.peek()
+        msg = (
+            f"Python-style 'for ... in ...' is not used in Hinglish comprehensions. "
+            f"Use 'har ... mein ...' inside comprehensions (e.g. '{example}')."
+        )
+        return self._syntax_error(msg, tok)
+
     def parse_comprehension_clauses(self) -> List[ComprehensionClause]:
         """Parses one or more 'har [intezaar] <target> mein <iterable> [agar <condition>]*' clauses."""
         clauses: List[ComprehensionClause] = []
@@ -1179,6 +1196,18 @@ class HinglishParser:
         if self.check_py_keyword("lambda"):
             return self.parse_lambda()
         expr = self.parse_boolean_or()
+        if self.match_py_keyword("if"):
+            condition = self.parse_boolean_or()
+            if not self.match_py_keyword("else"):
+                raise self._syntax_error("Expected 'warna' in conditional expression", self.peek())
+            orelse = self.parse_expression()
+            expr = IfExp(
+                body=expr,
+                condition=condition,
+                orelse=orelse,
+                start_pos=expr.start_pos,
+                end_pos=orelse.end_pos,
+            )
         if self.match(TokenType.WALRUS):
             value = self.parse_expression()
             return AssignmentExpression(
@@ -1582,6 +1611,8 @@ class HinglishParser:
                     start_pos=start_pos,
                     end_pos=rparen.end_pos,
                 )
+            elif self._is_python_for_token():
+                raise self._comprehension_hint_error("(x har x mein xs)")
 
             if self.match(TokenType.COMMA):
                 # Tuple literal (first, ...)
@@ -1614,6 +1645,8 @@ class HinglishParser:
                     start_pos=start_pos,
                     end_pos=rbracket.end_pos,
                 )
+            elif self._is_python_for_token():
+                raise self._comprehension_hint_error("[x har x mein xs]")
 
             elements = [first]
             while self.match(TokenType.COMMA):
@@ -1668,6 +1701,8 @@ class HinglishParser:
                         start_pos=start_pos,
                         end_pos=rbrace.end_pos,
                     )
+                elif self._is_python_for_token():
+                    raise self._comprehension_hint_error("{k: v har x mein xs}")
                 keys = [first]
                 values = [first_val]
                 while self.match(TokenType.COMMA):
@@ -1697,6 +1732,8 @@ class HinglishParser:
                     start_pos=start_pos,
                     end_pos=rbrace.end_pos,
                 )
+            elif self._is_python_for_token():
+                raise self._comprehension_hint_error("{x har x mein xs}")
 
             # Case C: Set Literal: {elem1, elem2, ...}
             set_elements = [first]

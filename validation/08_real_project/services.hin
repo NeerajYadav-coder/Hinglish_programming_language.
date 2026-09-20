@@ -1,0 +1,38 @@
+# Business services for real-world project validation
+laao config
+se models laao Order
+se utils laao format_currency, hash_token
+
+
+varg BillingService:
+    kaam __init__(self):
+        self.tax_rate = config.TAX_RATE
+
+    kaam process_order(self, order: Order) -> dict:
+        # Determine loyalty discount by tier
+        tier = order.customer.tier.lower()
+        discount = 0.0
+        agar tier == "vip":
+            discount = config.VIP_DISCOUNT
+        warna_agar tier == "gold":
+            discount = config.GOLD_DISCOUNT
+
+        order.discount_rate = discount
+        order.tax_rate = self.tax_rate
+
+        subtotal = order.compute_subtotal()
+        discount_amount = order.compute_discount()
+        tax_amount = order.compute_tax()
+        grand_total = order.compute_grand_total()
+
+        token = hash_token(f"{order.order_id}-{grand_total}")
+
+        wapas {"order_id": order.order_id, "customer_name": order.customer.name, "tier": order.customer.tier, "item_count": len(order.items), "subtotal": subtotal, "discount": discount_amount, "tax": tax_amount, "grand_total": grand_total, "token": token}
+
+
+varg NotificationService:
+    kaam format_receipt(self, summary: dict) -> str:
+        cur = config.CURRENCY
+        banner = config.get_app_banner()
+        lines = [f"=== {banner} Invoice Receipt ===", f"Order ID:    {summary['order_id']}", f"Customer:    {summary['customer_name']} ({summary['tier'].upper()})", f"Items:       {summary['item_count']}", f"Subtotal:    {format_currency(summary['subtotal'], cur)}", f"Discount:   -{format_currency(summary['discount'], cur)}", f"GST (18%):   +{format_currency(summary['tax'], cur)}", f"Total Due:   {format_currency(summary['grand_total'], cur)}", f"Auth Hash:   {summary['token']}"]
+        wapas "\n".join(lines)

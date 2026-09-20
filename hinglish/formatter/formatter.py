@@ -51,6 +51,7 @@ from ..ast.nodes import (
     Global,
     Identifier,
     If,
+    IfExp,
     Import,
     Indexing,
     Integer,
@@ -100,6 +101,7 @@ from ..parser.parser import HinglishParser
 # Operator Precedence Levels (lowest 1 to highest 15)
 PREC_LAMBDA = 1
 PREC_ASSIGN = 2     # Walrus :=
+PREC_COND = 2.5     # agar ... warna ...
 PREC_OR = 3         # ya
 PREC_AND = 4        # aur
 PREC_NOT = 5        # nahi
@@ -121,6 +123,8 @@ def get_precedence(expr: Expression) -> int:
         return PREC_LAMBDA
     if isinstance(expr, AssignmentExpression):
         return PREC_ASSIGN
+    if isinstance(expr, IfExp):
+        return PREC_COND
     if isinstance(expr, BooleanOperation):
         if expr.op in ("ya", "or"):
             return PREC_OR
@@ -597,9 +601,9 @@ class HinglishFormatter:
             needs_parens = True
         elif my_prec == parent_prec and parent_prec not in (PREC_PRIMARY, 0):
             # Same precedence: left-associative operators need parens for right child
-            if is_right and parent_prec not in (PREC_POW,):
+            if is_right and parent_prec not in (PREC_POW, PREC_COND):
                 needs_parens = True
-            elif not is_right and parent_prec == PREC_POW:
+            elif not is_right and parent_prec in (PREC_POW,):
                 needs_parens = True
 
         if needs_parens:
@@ -722,6 +726,13 @@ class HinglishFormatter:
             op_name = "aur" if expr.op in ("aur", "and") else "ya"
             parts = [self._format_expr(v, parent_prec=prec) for v in expr.values]
             return f" {op_name} ".join(parts)
+
+        # Conditional Expression
+        if isinstance(expr, IfExp):
+            b_str = self._format_expr(expr.body, parent_prec=PREC_COND + 0.1)
+            c_str = self._format_expr(expr.condition, parent_prec=PREC_COND + 0.1)
+            o_str = self._format_expr(expr.orelse, parent_prec=PREC_COND, is_right=True)
+            return f"{b_str} agar {c_str} warna {o_str}"
 
         # Walrus
         if isinstance(expr, AssignmentExpression):

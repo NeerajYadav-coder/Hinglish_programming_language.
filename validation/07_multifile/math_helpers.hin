@@ -1,0 +1,37 @@
+# Math helper functions for multi-file validation
+kaam factorial(n: int) -> int:
+    agar n <= 1:
+        wapas 1
+    wapas n * factorial(n - 1)
+
+
+kaam is_prime(n: int) -> bool:
+    agar n <= 1:
+        wapas galat
+    agar n <= 3:
+        wapas sahi
+    agar n % 2 == 0:
+        wapas galat
+    i = 3
+    jabtak i * i <= n:
+        agar n % i == 0:
+            wapas galat
+        i = i + 2
+    wapas sahi
+
+
+kaam fibonacci(n: int) -> list:
+    agar n <= 0:
+        wapas []
+    agar n == 1:
+        wapas [0]
+    seq = [0, 1]
+    jabtak len(seq) < n:
+        seq.append(seq[-1] + seq[-2])
+    wapas seq
+
+
+kaam mean(numbers: list) -> float:
+    agar len(numbers) == 0:
+        wapas 0.0
+    wapas sum(numbers) / len(numbers)

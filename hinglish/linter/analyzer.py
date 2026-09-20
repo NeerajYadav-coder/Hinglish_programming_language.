@@ -43,6 +43,7 @@ from ..ast.nodes import (
     Global,
     Identifier,
     If,
+    IfExp,
     Import,
     Indexing,
     Integer,
@@ -104,6 +105,10 @@ _HINGLISH_BUILTINS: Set[str] = {
     "dikhao",
     "pucho",
     "lambai",
+    "ginti",
+    "jod",
+    "sab",
+    "koi",
     "prakar",
     "kram",
     "purnank",
@@ -741,6 +746,11 @@ class HinglishLinter:
         """Traverses expressions and records variable reads."""
         if isinstance(expr, Identifier):
             self.all_reads.append((expr.name, expr, expr.start_pos, scope))
+
+        elif isinstance(expr, IfExp):
+            self._visit_expression(expr.condition, scope)
+            self._visit_expression(expr.body, scope)
+            self._visit_expression(expr.orelse, scope)
 
         elif isinstance(expr, AssignmentExpression):
             # Walrus operator: (x := 10)

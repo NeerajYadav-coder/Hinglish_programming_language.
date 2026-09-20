@@ -1,0 +1,78 @@
+# Validation 01_basics: calculator.hin
+# Real-world interactive/batch expression and arithmetic utility
+laao math
+
+
+varg Calculator:
+    kaam __init__(self):
+        self.history = []
+
+    kaam add(self, a: float, b: float) -> float:
+        res = a + b
+        self._record("+", a, b, res)
+        wapas res
+
+    kaam subtract(self, a: float, b: float) -> float:
+        res = a - b
+        self._record("-", a, b, res)
+        wapas res
+
+    kaam multiply(self, a: float, b: float) -> float:
+        res = a * b
+        self._record("*", a, b, res)
+        wapas res
+
+    kaam divide(self, a: float, b: float) -> float:
+        agar b == 0:
+            uthav ZeroDivisionError("Shunya se bhag nahi ho sakta")
+        res = a / b
+        self._record("/", a, b, res)
+        wapas res
+
+    kaam power(self, base: float, exp: float) -> float:
+        res = base ** exp
+        self._record("^", base, exp, res)
+        wapas res
+
+    kaam square_root(self, val: float) -> float:
+        agar val < 0:
+            uthav ValueError("Rinatmank sankhya ka vargmool nahi nikal sakte")
+        res = math.sqrt(val)
+        self._record("sqrt", val, 0, res)
+        wapas res
+
+    kaam _record(self, op: str, a: float, b: float, res: float):
+        entry = f"{a} {op} {b} = {res}"
+        self.history.append(entry)
+
+    kaam print_history(self):
+        dikhao("--- Ganna Itihaas (Calculation History) ---")
+        agar lambai(self.history) == 0:
+            dikhao("Itihaas khali hai (No calculations yet)")
+        warna:
+            har item mein self.history:
+                dikhao(f"  {item}")
+
+
+calc = Calculator()
+r1 = calc.add(15, 27)
+r2 = calc.multiply(6, 7)
+r3 = calc.divide(100, 4)
+r4 = calc.power(2, 8)
+r5 = calc.square_root(144)
+
+daawa r1 == 42
+daawa r2 == 42
+daawa r3 == 25.0
+daawa r4 == 256
+daawa r5 == 12.0
+# Test division by zero
+div_by_zero_caught = galat
+koshish:
+    calc.divide(10, 0)
+pakdo ZeroDivisionError:
+    div_by_zero_caught = sahi
+
+daawa div_by_zero_caught hai sahi
+calc.print_history()
+dikhao("calculator.hin: SUCCESS")

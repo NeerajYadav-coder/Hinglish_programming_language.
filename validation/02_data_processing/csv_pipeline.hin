@@ -1,0 +1,54 @@
+# Validation 02_data_processing: csv_pipeline.hin
+# Tests Python standard library csv and io modules in-memory
+laao csv
+se io laao StringIO
+raw_csv_data = """id,employee,department,salary,years_experience
+1,Aarav Sharma,Engineering,1200000,4
+2,Priya Patel,Marketing,850000,2
+3,Rohan Verma,Engineering,1600000,7
+4,Sneha Rao,Product,1400000,5
+5,Vikram Singh,Engineering,900000,1
+6,Ananya Roy,Marketing,1100000,3
+"""
+
+# Read and parse CSV
+input_stream = StringIO(raw_csv_data.strip())
+reader = csv.DictReader(input_stream)
+
+processed_employees = []
+total_eng_salary = 0
+senior_count = 0
+
+har row mein reader:
+    name = row["employee"]
+    dept = row["department"]
+    sal = purnank(row["salary"])
+    exp = purnank(row["years_experience"])
+
+    is_senior = exp >= 4
+    agar is_senior:
+        senior_count = senior_count + 1
+
+    agar dept == "Engineering":
+        total_eng_salary = total_eng_salary + sal
+
+    processed_employees.append({"id": row["id"], "name": name, "dept": dept, "salary": sal, "is_senior": is_senior})
+
+daawa lambai(processed_employees) == 6
+daawa senior_count == 3
+daawa total_eng_salary == 1200000 + 1600000 + 900000
+# Write processed data back to CSV string
+output_stream = StringIO()
+fieldnames = ["id", "name", "dept", "salary", "is_senior"]
+writer = csv.DictWriter(output_stream, fieldnames=fieldnames)
+writer.writeheader()
+har emp mein processed_employees:
+    writer.writerow(emp)
+
+generated_csv = output_stream.getvalue()
+daawa "Rohan Verma,Engineering,1600000,True" mein generated_csv
+dikhao("=== CSV Pipeline Processed Successfully ===")
+dikhao(f"Total Employees Processed: {lambai(processed_employees)}")
+dikhao(f"Senior Staff Count:        {senior_count}")
+dikhao(f"Engineering Total Payroll: INR {total_eng_salary:,}")
+dikhao("csv_pipeline.hin: SUCCESS")

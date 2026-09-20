@@ -1,0 +1,12 @@
+# Application configuration for real-world project validation
+APP_NAME = "Karyashala Billing Engine"
+VERSION = "1.0.0"
+CURRENCY = "INR"
+TAX_RATE = 0.18
+VIP_DISCOUNT = 0.15
+GOLD_DISCOUNT = 0.10
+MIN_FREE_SHIPPING_TOTAL = 1000.0
+
+
+kaam get_app_banner() -> str:
+    wapas f"[{APP_NAME} v{VERSION}]"

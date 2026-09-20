@@ -1,0 +1,103 @@
+# Validation 03_oop: inventory_system.hin
+# Real-world domain model with inheritance, properties, polymorphism, and business validation
+varg InsufficientStockError(Exception):
+    kaam __init__(self, item_name: str, available: int, requested: int):
+        self.item_name = item_name
+        self.available = available
+        self.requested = requested
+        super().__init__(f"Paryapt stock nahi hai: '{item_name}' (Uplabdh: {available}, Maang: {requested})")
+
+
+varg Item:
+    kaam __init__(self, sku: str, name: str, unit_price: float, quantity: int = 0):
+        self.sku = sku
+        self.name = name
+        self._unit_price = unit_price
+        self.quantity = quantity
+
+    @property
+    kaam unit_price(self) -> float:
+        wapas self._unit_price
+
+    kaam total_value(self) -> float:
+        wapas self._unit_price * self.quantity
+
+    kaam restock(self, count: int):
+        agar count <= 0:
+            uthav ValueError("Restock count shunya se bada hona chahiye")
+        self.quantity = self.quantity + count
+
+    kaam dispatch(self, count: int):
+        agar count > self.quantity:
+            uthav InsufficientStockError(self.name, self.quantity, count)
+        self.quantity = self.quantity - count
+
+
+varg PerishableItem(Item):
+    kaam __init__(self, sku: str, name: str, unit_price: float, quantity: int, days_to_expiry: int):
+        super().__init__(sku, name, unit_price, quantity)
+        self.days_to_expiry = days_to_expiry
+
+    kaam is_close_to_expiry(self) -> bool:
+        wapas self.days_to_expiry <= 3
+
+    # Override total_value with discount if close to expiry
+    kaam total_value(self) -> float:
+        base = super().total_value()
+        agar self.is_close_to_expiry():
+            wapas base * 0.7  # 30% discount
+        wapas base
+
+
+varg Warehouse:
+    kaam __init__(self, location: str):
+        self.location = location
+        self.inventory = {}
+
+    kaam add_item(self, item: Item):
+        self.inventory[item.sku] = item
+
+    kaam get_total_valuation(self) -> float:
+        wapas kul_jod([item.total_value() har item mein self.inventory.values()])
+
+    kaam dispatch_sku(self, sku: str, count: int):
+        agar sku nahi mein self.inventory:
+            uthav KeyError(f"SKU '{sku}' warehouse mein nahi mila")
+        self.inventory[sku].dispatch(count)
+
+
+# 1. Setup warehouse and items
+wh = Warehouse("Bhiwandi Hub 1")
+laptop = Item("ITM-001", "Developer Laptop", 85000.0, 10)
+milk = PerishableItem("PRSH-001", "Organic Milk", 60.0, 50, days_to_expiry=2)
+juice = PerishableItem("PRSH-002", "Fresh Juice", 120.0, 30, days_to_expiry=10)
+
+wh.add_item(laptop)
+wh.add_item(milk)
+wh.add_item(juice)
+
+# 2. Valuation checks with polymorphism
+daawa laptop.total_value() == 850000.0
+# Milk has 30% expiry discount: 60.0 * 50 * 0.7 = 2100.0
+daawa milk.is_close_to_expiry() hai sahi
+daawa milk.total_value() == 2100.0
+# Juice has full price: 120.0 * 30 = 3600.0
+daawa juice.total_value() == 3600.0
+total_val = wh.get_total_valuation()
+daawa total_val == 850000.0 + 2100.0 + 3600.0
+# 3. Stock management and exception handling
+wh.dispatch_sku("ITM-001", 3)
+daawa laptop.quantity == 7
+stock_error_caught = galat
+koshish:
+    wh.dispatch_sku("ITM-001", 100)
+pakdo InsufficientStockError jaise err:
+    stock_error_caught = sahi
+    daawa err.available == 7
+    daawa err.requested == 100
+daawa stock_error_caught hai sahi
+dikhao("=== Warehouse Inventory Validated ===")
+dikhao(f"Location:           {wh.location}")
+dikhao(f"Total Valuation:    INR {wh.get_total_valuation():,.2f}")
+dikhao(f"Remaining Laptops:  {laptop.quantity}")
+dikhao("inventory_system.hin: SUCCESS")

@@ -1,0 +1,54 @@
+# Validation 01_basics: text_stats.hin
+# Comprehensive text metrics, frequency distribution, and vocabulary analysis
+kaam analyze_text(text: str) -> dict:
+    total_chars = lambai(text)
+
+    # Words extraction
+    raw_words = text.split()
+    total_words = lambai(raw_words)
+
+    # Cleaned words
+    cleaned_words = []
+    har w mein raw_words:
+        cleaned = w.strip(".,!?:;\"'()[]{}").lower()
+        agar lambai(cleaned) > 0:
+            cleaned_words.append(cleaned)
+
+    # Longest word and total word length
+    longest_word = ""
+    word_len_sum = 0
+    har w mein cleaned_words:
+        w_len = lambai(w)
+        word_len_sum = word_len_sum + w_len
+        agar w_len > lambai(longest_word):
+            longest_word = w
+
+    avg_word_len = 0.0
+    agar total_words > 0:
+        avg_word_len = word_len_sum / total_words
+
+    # Character frequencies
+    char_freq = {}
+    har ch mein text.lower():
+        agar ch.isalpha():
+            agar ch mein char_freq:
+                char_freq[ch] = char_freq[ch] + 1
+            warna:
+                char_freq[ch] = 1
+
+    wapas {"chars": total_chars, "words": total_words, "longest": longest_word, "avg_len": avg_word_len, "freq": char_freq}
+
+
+sample_para = "Hinglish is a modern language interface that empowers developers to write algorithms naturally."
+stats = analyze_text(sample_para)
+
+dikhao("=== Text Analysis Report ===")
+dikhao(f"Total Characters: {stats['chars']}")
+dikhao(f"Total Words:      {stats['words']}")
+dikhao(f"Longest Word:     {stats['longest']}")
+dikhao(f"Average Length:   {stats['avg_len']:.2f}")
+
+daawa stats["words"] == 13
+daawa lambai(stats["longest"]) == 10
+daawa stats["chars"] > 50
+dikhao("text_stats.hin: SUCCESS")

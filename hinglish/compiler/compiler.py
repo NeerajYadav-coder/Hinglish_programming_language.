@@ -45,6 +45,7 @@ from ..ast.nodes import (
     Global,
     Identifier,
     If,
+    IfExp,
     Import,
     Indexing,
     Integer,
@@ -93,6 +94,7 @@ class HinglishCompiler:
     """AST-driven code generator producing validated Python 3 source code."""
 
     PRECEDENCE = {
+        "if_exp": 0.5,
         "or": 1,
         "and": 2,
         "not": 3,
@@ -536,7 +538,8 @@ class HinglishCompiler:
 
         if isinstance(expr, String):
             prefix = expr.prefix or ""
-            return f"{prefix}{repr(expr.value)}"
+            py_prefix = "".join(ch for ch in prefix if ch not in ("r", "R"))
+            return f"{py_prefix}{repr(expr.value)}"
 
         if isinstance(expr, FormattedValue):
             val_str = self.compile_expression(expr.value)
@@ -652,6 +655,16 @@ class HinglishCompiler:
             current_prec = self.PRECEDENCE.get("unary", 11)
             val_str = self.compile_expression(expr.value, parent_prec=current_prec)
             res = f"await {val_str}"
+            if current_prec < parent_prec:
+                return f"({res})"
+            return res
+
+        if isinstance(expr, IfExp):
+            current_prec = self.PRECEDENCE.get("if_exp", 0.5)
+            body_str = self.compile_expression(expr.body, parent_prec=current_prec + 0.1)
+            cond_str = self.compile_expression(expr.condition, parent_prec=current_prec + 0.1)
+            orelse_str = self.compile_expression(expr.orelse, parent_prec=current_prec)
+            res = f"{body_str} if {cond_str} else {orelse_str}"
             if current_prec < parent_prec:
                 return f"({res})"
             return res

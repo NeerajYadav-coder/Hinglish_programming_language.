@@ -1,0 +1,40 @@
+# Runner for multi-file modular validation
+# Imports math_helpers and string_helpers
+se math_helpers laao factorial, is_prime, fibonacci, mean
+laao string_helpers jaise str_tools
+
+
+kaam main():
+    dikhao("=== Multi-File Module Integration Validation ===")
+
+    # 1. Math helpers verification
+    fact_5 = factorial(5)
+    dikhao(f"Factorial of 5: {fact_5}")
+    daawa fact_5 == 120
+    primes = [n har n mein range(1, 20) agar is_prime(n)]
+    dikhao(f"Primes up to 20: {primes}")
+    daawa primes == [2, 3, 5, 7, 11, 13, 17, 19]
+    fib_8 = fibonacci(8)
+    dikhao(f"First 8 Fibonacci: {fib_8}")
+    daawa fib_8 == [0, 1, 1, 2, 3, 5, 8, 13]
+    avg_fib = mean(fib_8)
+    dikhao(f"Mean of Fibonacci sequence: {avg_fib:.2f}")
+
+    # 2. String helpers verification
+    title = "  Hinglish: The Next Generation Programming Language!  "
+    slug = str_tools.slugify(title)
+    dikhao(f"Slugified Title: {slug}")
+    daawa slug == "hinglish-the-next-generation-programming-language"
+    short_title = str_tools.truncate(title.strip(), 25)
+    dikhao(f"Truncated Title: {short_title}")
+    daawa short_title == "Hinglish: The Next Gen..."
+    count = str_tools.word_count(title)
+    dikhao(f"Word Count: {count}")
+    daawa count == 6
+    formatted_title = str_tools.title_case("hello hinglish world from india")
+    dikhao(f"Title Cased: {formatted_title}")
+    daawa formatted_title == "Hello Hinglish World From India"
+    dikhao("runner.hin: SUCCESS")
+
+
+main()

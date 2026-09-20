@@ -1,0 +1,27 @@
+# String helper utilities for multi-file validation
+laao re
+
+
+kaam slugify(text: str) -> str:
+    cleaned = text.strip().lower()
+    cleaned = re.sub(r"[^\w\s-]", "", cleaned)
+    wapas re.sub(r"[-\s]+", "-", cleaned)
+
+
+kaam truncate(text: str, max_length: int) -> str:
+    agar len(text) <= max_length:
+        wapas text
+    agar max_length <= 3:
+        wapas text[:max_length]
+    wapas text[:max_length - 3] + "..."
+
+
+kaam word_count(text: str) -> int:
+    words = text.strip().split()
+    wapas len(words)
+
+
+kaam title_case(text: str) -> str:
+    words = text.split()
+    titled_words = [w.capitalize() har w mein words]
+    wapas " ".join(titled_words)

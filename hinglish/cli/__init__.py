@@ -3,7 +3,7 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from .. import __version__
 from ..ast import format_ast
@@ -14,6 +14,48 @@ from ..lexer import format_tokens, tokenize
 from ..linter import lint_source
 from ..parser import parse
 from ..runtime import run, run_file, start_repl
+
+
+def discover_hin_files(target_inputs: List[str]) -> Tuple[Optional[List[Path]], bool, Optional[str], int]:
+    """Resolves target paths (files or directories) into a deterministic list of files.
+
+    Returns:
+        (files, has_directory, error_message, exit_code)
+        If stdin mode ('-'), files is None, error_message is None, exit_code is 0.
+    """
+    if "-" in target_inputs:
+        if len(target_inputs) > 1:
+            return None, False, "Error: Standard input ('-') cannot be combined with other targets.", 2
+        return None, False, None, 0
+
+    has_directory = False
+    discovered_files: List[Path] = []
+    seen = set()
+
+    for target in target_inputs:
+        p = Path(target)
+        if not p.exists():
+            return None, False, f"Error: File not found: {target}", 2
+        if p.is_dir():
+            has_directory = True
+            dir_hin_files = sorted(
+                [f for f in p.rglob("*.hin") if f.is_file()],
+                key=lambda x: x.as_posix(),
+            )
+            for f in dir_hin_files:
+                resolved = f.resolve()
+                if resolved not in seen:
+                    seen.add(resolved)
+                    discovered_files.append(f)
+        elif p.is_file():
+            resolved = p.resolve()
+            if resolved not in seen:
+                seen.add(resolved)
+                discovered_files.append(p)
+        else:
+            return None, False, f"Error: File not found: {target}", 2
+
+    return discovered_files, has_directory, None, 0
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -28,8 +70,8 @@ Commands:
   tokens <file>           Tokenize and print token table
   ast <file>              Parse and print Abstract Syntax Tree
   transpile <file> [-o]   Transpile to Python source code
-  format <file> [-o] [--check] Format Hinglish script to canonical style
-  lint <file>... [--check] Run static analysis and lint diagnostics
+  format <file|dir>... [-o] [--check] Format Hinglish script(s) to canonical style
+  lint <file|dir>... [--check] Run static analysis and lint diagnostics
   repl                    Start interactive REPL
 
 Shorthand Usage:
@@ -37,8 +79,8 @@ Shorthand Usage:
   hinglish --tokens <file>   Inspect tokens
   hinglish --ast <file>      Inspect AST
   hinglish --transpile <file> Transpile to Python
-  hinglish --format <file>   Format script in-place
-  hinglish --lint <file>     Lint script
+  hinglish --format <file|dir>... Format script(s) in-place
+  hinglish --lint <file|dir>...   Lint script(s)
   hinglish                   Start interactive REPL (or execute stdin if piped)
 """,
     )
@@ -63,7 +105,7 @@ Shorthand Usage:
         "extra_files",
         nargs="*",
         metavar="extra_files",
-        help="Additional file paths when using multi-file subcommands like lint.",
+        help="Additional file or directory paths when using multi-target subcommands like lint and format.",
     )
     parser.add_argument(
         "-o", "--output",
@@ -158,41 +200,57 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # 2.5 Handle Lint command
     if command == "lint":
-        target_files = []
-        if file_arg:
-            target_files.append(file_arg)
-        if getattr(args, "extra_files", None):
-            target_files.extend(args.extra_files)
+        target_inputs = []
+        if raw_cmd in subcommands:
+            if sub_file:
+                target_inputs.append(sub_file)
+            if getattr(args, "extra_files", None):
+                target_inputs.extend(args.extra_files)
+        else:
+            if raw_cmd:
+                target_inputs.append(raw_cmd)
+            if sub_file:
+                target_inputs.append(sub_file)
+            if getattr(args, "extra_files", None):
+                target_inputs.extend(args.extra_files)
 
-        if not target_files:
+        if not target_inputs:
             if not sys.stdin.isatty():
-                target_files = ["-"]
+                target_inputs = ["-"]
             else:
                 print("Error: Subcommand 'lint' requires a script file argument or standard input ('-').", file=sys.stderr)
                 return 2
 
+        discovered_files, has_directory, err_msg, exit_code = discover_hin_files(target_inputs)
+        if err_msg:
+            print(err_msg, file=sys.stderr)
+            return exit_code
+
+        if discovered_files is None:
+            try:
+                src = sys.stdin.read()
+            except Exception as exc:
+                print(f"Error reading standard input: {exc}", file=sys.stderr)
+                return 2
+            diags = lint_source(src, filename="<stdin>")
+            total_findings = len(diags)
+            error_findings = sum(1 for d in diags if d.severity == "error")
+            for d in diags:
+                print(d.format_cli())
+            if args.check:
+                return 1 if total_findings > 0 else 0
+            return 1 if error_findings > 0 else 0
+
         total_findings = 0
         error_findings = 0
 
-        for target in target_files:
-            if target == "-":
-                filename = "<stdin>"
-                try:
-                    src = sys.stdin.read()
-                except Exception as exc:
-                    print(f"Error reading standard input: {exc}", file=sys.stderr)
-                    return 2
-            else:
-                target_path = Path(target)
-                if not target_path.is_file():
-                    print(f"Error: File not found: {target}", file=sys.stderr)
-                    return 2
-                filename = str(target_path)
-                try:
-                    src = target_path.read_text(encoding="utf-8")
-                except Exception as exc:
-                    print(f"Error reading {target}: {exc}", file=sys.stderr)
-                    return 2
+        for file_path in discovered_files:
+            filename = str(file_path)
+            try:
+                src = file_path.read_text(encoding="utf-8")
+            except Exception as exc:
+                print(f"Error reading {file_path}: {exc}", file=sys.stderr)
+                return 2
 
             diags = lint_source(src, filename=filename)
             for d in diags:
@@ -205,13 +263,134 @@ def main(argv: Optional[List[str]] = None) -> int:
             return 1 if total_findings > 0 else 0
         return 1 if error_findings > 0 else 0
 
-    # 3. Validate file argument for file-based commands
-    if command in {"run", "tokens", "ast", "transpile", "format"} and not file_arg:
-        if command == "format" and not sys.stdin.isatty():
-            file_arg = "-"
+    # 2.6 Handle Format command
+    if command == "format":
+        target_inputs = []
+        if raw_cmd in subcommands:
+            if sub_file:
+                target_inputs.append(sub_file)
+            if getattr(args, "extra_files", None):
+                target_inputs.extend(args.extra_files)
         else:
-            print(f"Error: Subcommand '{command}' requires a script file argument.", file=sys.stderr)
-            return 2
+            if raw_cmd:
+                target_inputs.append(raw_cmd)
+            if sub_file:
+                target_inputs.append(sub_file)
+            if getattr(args, "extra_files", None):
+                target_inputs.extend(args.extra_files)
+
+        if not target_inputs:
+            if not sys.stdin.isatty():
+                target_inputs = ["-"]
+            else:
+                print("Error: Subcommand 'format' requires a script file argument.", file=sys.stderr)
+                return 2
+
+        discovered_files, has_directory, err_msg, exit_code = discover_hin_files(target_inputs)
+        if err_msg:
+            print(err_msg, file=sys.stderr)
+            return exit_code
+
+        # Safety check for -o / --output
+        if args.output:
+            if has_directory or len(target_inputs) > 1 or (discovered_files is not None and len(discovered_files) > 1):
+                print("Error: -o/--output cannot be used with multiple files or directory targets.", file=sys.stderr)
+                return 2
+
+        # 1. Stdin mode
+        if discovered_files is None:
+            try:
+                src = sys.stdin.read()
+            except Exception as exc:
+                print(f"Error reading standard input: {exc}", file=sys.stderr)
+                return 1
+
+            try:
+                formatted = format_source(src)
+            except HinglishError as err:
+                print(f"Format error in <stdin>:\n{err}", file=sys.stderr)
+                return 1
+            except Exception as exc:
+                print(f"Format error in <stdin>: {exc}", file=sys.stderr)
+                return 1
+
+            if args.check:
+                if formatted == src:
+                    return 0
+                else:
+                    print("File would be reformatted: <stdin>", file=sys.stderr)
+                    return 1
+
+            if args.output:
+                out_path = Path(args.output)
+                try:
+                    out_path.write_text(formatted, encoding="utf-8")
+                    return 0
+                except Exception as exc:
+                    print(f"Error writing to {args.output}: {exc}", file=sys.stderr)
+                    return 1
+            else:
+                sys.stdout.write(formatted)
+                return 0
+
+        # 2. Check mode
+        if args.check:
+            would_reformat = False
+            for file_path in discovered_files:
+                try:
+                    src = file_path.read_text(encoding="utf-8")
+                    formatted = format_source(src)
+                except HinglishError as err:
+                    print(f"Format error in {file_path}:\n{err}", file=sys.stderr)
+                    return 1
+                except Exception as exc:
+                    print(f"Format error in {file_path}: {exc}", file=sys.stderr)
+                    return 1
+
+                if formatted != src:
+                    print(f"File would be reformatted: {file_path}", file=sys.stderr)
+                    would_reformat = True
+            return 1 if would_reformat else 0
+
+        # 3. Output flag mode (single file)
+        if args.output:
+            if not discovered_files:
+                return 0
+            file_path = discovered_files[0]
+            out_path = Path(args.output)
+            if out_path.resolve() == file_path.resolve():
+                print("Error: Output path cannot overwrite the source file.", file=sys.stderr)
+                return 1
+            try:
+                src = file_path.read_text(encoding="utf-8")
+                formatted = format_source(src)
+                out_path.write_text(formatted, encoding="utf-8")
+                return 0
+            except HinglishError as err:
+                print(f"Format error in {file_path}:\n{err}", file=sys.stderr)
+                return 1
+            except Exception as exc:
+                print(f"Error writing to {args.output}: {exc}", file=sys.stderr)
+                return 1
+
+        # 4. In-place formatting mode
+        for file_path in discovered_files:
+            try:
+                src = file_path.read_text(encoding="utf-8")
+                formatted = format_source(src)
+                file_path.write_text(formatted, encoding="utf-8")
+            except HinglishError as err:
+                print(f"Format error in {file_path}:\n{err}", file=sys.stderr)
+                return 1
+            except Exception as exc:
+                print(f"Error writing to {file_path}: {exc}", file=sys.stderr)
+                return 1
+        return 0
+
+    # 3. Validate file argument for file-based commands
+    if command in {"run", "tokens", "ast", "transpile"} and not file_arg:
+        print(f"Error: Subcommand '{command}' requires a script file argument.", file=sys.stderr)
+        return 2
 
     # 4. Handle reading source code (either from stdin '-' or from disk)
     if file_arg == "-":
@@ -273,44 +452,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(f"Compilation error in {file_arg}:\n{err}", file=sys.stderr)
             return 1
 
-    # 8. Format Source Code
-    if command == "format":
-        try:
-            formatted = format_source(source_code)
-        except HinglishError as err:
-            print(f"Format error in {file_arg}:\n{err}", file=sys.stderr)
-            return 1
-        except Exception as exc:
-            print(f"Format error in {file_arg}: {exc}", file=sys.stderr)
-            return 1
-
-        if args.check:
-            if formatted == source_code:
-                return 0
-            else:
-                print(f"File would be reformatted: {file_arg}", file=sys.stderr)
-                return 1
-
-        if args.output:
-            out_path = Path(args.output)
-            try:
-                out_path.write_text(formatted, encoding="utf-8")
-                return 0
-            except Exception as exc:
-                print(f"Error writing to {args.output}: {exc}", file=sys.stderr)
-                return 1
-        elif file_arg == "-":
-            sys.stdout.write(formatted)
-            return 0
-        else:
-            try:
-                target_path.write_text(formatted, encoding="utf-8")
-                return 0
-            except Exception as exc:
-                print(f"Error writing to {file_arg}: {exc}", file=sys.stderr)
-                return 1
-
-    # 9. Direct Execution (File or Stdin)
+    # 8. Direct Execution (File or Stdin)
     try:
         if target_path is not None:
             run_file(target_path)
@@ -328,6 +470,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     except Exception as exc:
         print(f"Error executing {file_arg}: {exc}", file=sys.stderr)
         return 1
+
+
+__all__ = ["create_parser", "main", "discover_hin_files"]
 
 
 if __name__ == "__main__":

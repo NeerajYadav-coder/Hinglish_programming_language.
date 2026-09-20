@@ -222,5 +222,15 @@ class TestHinglishCompiler(unittest.TestCase):
             self.assert_valid_python(py)
 
 
+    def test_raw_string_literal_compilation(self) -> None:
+        """Regression test verifying raw string regex patterns do not double escape backslashes."""
+        source = 'pat = r"[^\\w\\s-]"\n'
+        py = compile(source)
+        self.assert_valid_python(py)
+        env = {}
+        exec(py, env)
+        self.assertEqual(env["pat"], r"[^\w\s-]")
+
+
 if __name__ == "__main__":
     unittest.main()

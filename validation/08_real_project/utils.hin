@@ -1,0 +1,24 @@
+# Utility functions for real-world project validation
+laao re
+laao hashlib
+
+
+kaam format_currency(amount: float, currency: str = "INR") -> str:
+    wapas f"{currency} {amount:,.2f}"
+
+
+kaam validate_email(email: str) -> bool:
+    pat = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+    agar re.match(pat, email.strip()):
+        wapas sahi
+    wapas galat
+
+
+kaam generate_order_id(prefix: str, number: int) -> str:
+    wapas f"{prefix}-{number:04d}"
+
+
+kaam hash_token(data: str) -> str:
+    hasher = hashlib.sha256()
+    hasher.update(data.encode("utf-8"))
+    wapas hasher.hexdigest()[:12]

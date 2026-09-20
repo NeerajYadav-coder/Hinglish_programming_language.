@@ -138,8 +138,18 @@ warna:
     dikhao("Guest verified")
 
 # Loops (har ... mein ...)
-har i mein kram(1, 4):
+har i mein ginti(1, 4):
     dikhao(f"Step {i}")
+
+# Inline Conditional Expression (ternary)
+status = "Admin" agar naam == "Neeraj" warna "Member"
+
+# Bilingual Built-in Aliases
+items = [10, 20, 30]
+n = lambai(items)       # len -> 3
+total = jod(items)      # sum -> 60
+valid = sab([sahi, sahi]) # all -> True
+exists = koi([galat, sahi]) # any -> True
 
 # Functions (kaam, wapas)
 kaam jodo(a: int, b: int) -> int:
@@ -179,9 +189,11 @@ hinglish ast script.hin              # Inspect Abstract Syntax Tree
 hinglish transpile script.hin        # Transpile to Python source
 hinglish transpile script.hin -o out.py  # Save Python output to file
 hinglish format script.hin           # Format Hinglish source in-place
+hinglish format src/ tests/          # Recursively format all *.hin in directories
 hinglish format script.hin --check   # Check if formatted without modifying (exit code 0/1)
-hinglish format script.hin -o out.hin # Save formatted source to another file
+hinglish format script.hin -o out.hin # Save formatted source to another file (single input only)
 hinglish lint script.hin [files...]  # Static analysis and lint diagnostics
+hinglish lint src/ tests/            # Recursively discover and lint all *.hin in directories
 hinglish lint script.hin --check     # Lint check (exits 1 if warnings/errors found)
 hinglish repl                        # Start interactive REPL
 
@@ -190,9 +202,9 @@ hinglish script.hin                  # Execute script directly
 hinglish --tokens script.hin         # Inspect tokens
 hinglish --ast script.hin            # Inspect AST
 hinglish --transpile script.hin      # Transpile to stdout
-hinglish --format script.hin         # Format in-place
-hinglish --lint script.hin           # Run linter
-hinglish --version                   # Show version (1.0.0)
+hinglish --format src/               # Format directory in-place
+hinglish --lint src/                 # Run linter across directory
+hinglish --version                   # Show version
 ```
 
 ### 5. Standard Input (Stdin / Pipelines)

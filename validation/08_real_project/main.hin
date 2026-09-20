@@ -1,0 +1,58 @@
+# Main entry point for real-world project validation
+laao config
+se models laao Customer, OrderItem, Order, OrderValidationError
+se services laao BillingService, NotificationService
+se utils laao generate_order_id, validate_email
+
+
+kaam main():
+    dikhao(f"Starting {config.get_app_banner()} Pipeline...")
+
+    billing = BillingService()
+    notifier = NotificationService()
+
+    # 1. Setup customers
+    c1 = Customer("C-101", "Vikram Malhotra", "vikram@enterprise.in", tier="vip")
+    c2 = Customer("C-102", "Neha Sharma", "neha@startup.co", tier="gold")
+    c3 = Customer("C-103", "Rahul Verma", "rahul.verma@gmail.com", tier="standard")
+
+    daawa validate_email(c1.email) == sahi
+    daawa validate_email(c2.email) == sahi
+    # 2. Setup Orders
+    order1 = Order(generate_order_id("ORD", 1), c1, [OrderItem("SKU-SRV-01", "Cloud Dedicated Server", 12000.0, 2), OrderItem("SKU-SSL-02", "Wildcard SSL Certificate", 2500.0, 1)])
+
+    order2 = Order(generate_order_id("ORD", 2), c2, [OrderItem("SKU-MON-01", "4K Ultra-Wide Monitor", 32000.0, 1), OrderItem("SKU-KBD-02", "Mechanical Keyboard", 4500.0, 2)])
+
+    orders = [order1, order2]
+
+    har ord mein orders:
+        summary = billing.process_order(ord)
+        receipt = notifier.format_receipt(summary)
+        dikhao(receipt)
+        dikhao("")
+
+        # Pattern match on order outcome
+        milao summary["tier"]:
+            vichaar "vip":
+                dikhao("  -> Action: Priority dispatch assigned to enterprise support.")
+            vichaar "gold":
+                dikhao("  -> Action: Express courier allocated.")
+            vichaar _:
+                dikhao("  -> Action: Standard ground fulfillment.")
+
+        dikhao("-" * 50)
+
+    # 3. Test validation error handling
+    caught_error = galat
+    koshish:
+        bad_order = Order("ORD-BAD", c3, [])
+        billing.process_order(bad_order)
+    pakdo OrderValidationError jaise err:
+        caught_error = sahi
+        dikhao(f"Correctly caught expected validation error: {err.message}")
+
+    daawa caught_error == sahi
+    dikhao("main.hin: SUCCESS")
+
+
+main()

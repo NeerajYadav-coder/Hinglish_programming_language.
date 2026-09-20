@@ -1,0 +1,65 @@
+# Validation 05_file_processing: log_analyzer.hin
+# Real-world stream log processing, pattern extraction, and error diagnostics
+se io laao StringIO
+raw_logs = """2026-09-19 10:00:01 [INFO] auth_service: User login initiated for user_id=401
+2026-09-19 10:00:04 [WARN] payment_gw: High latency detected: 1420ms
+2026-09-19 10:00:09 [ERROR] database_pool: Connection timeout after 30s to cluster db-primary
+2026-09-19 10:00:15 [INFO] auth_service: Session token issued
+2026-09-19 10:00:22 [ERROR] payment_gw: Payment failed for txn_ref=TX-9902: Insufficient funds
+2026-09-19 10:00:30 [INFO] metrics_agent: Flush metrics completed: 154 metrics posted
+2026-09-19 10:00:35 [WARN] cache_layer: Memory usage threshold exceeded: 82%
+"""
+
+
+varg LogEntry:
+    kaam __init__(self, timestamp: str, level: str, service: str, message: str):
+        self.timestamp = timestamp
+        self.level = level
+        self.service = service
+        self.message = message
+
+
+kaam parse_log_line(line: str) -> LogEntry:
+    parts = line.strip().split(" ", 3)
+    agar lambai(parts) < 4:
+        uthav ValueError(f"Malformed log line: '{line}'")
+    ts = f"{parts[0]} {parts[1]}"
+    lvl = parts[2].strip("[]")
+    srv = parts[3].split(":", 1)[0]
+    msg = parts[3].split(":", 1)[1].strip()
+    wapas LogEntry(ts, lvl, srv, msg)
+
+
+# Process stream with context manager
+entries = []
+saath StringIO(raw_logs.strip()) jaise log_stream:
+    har line mein log_stream:
+        agar lambai(line.strip()) > 0:
+            entries.append(parse_log_line(line))
+
+daawa lambai(entries) == 7
+# Aggregate metrics
+level_counts = {}
+error_services = []
+
+har entry mein entries:
+    lvl = entry.level
+    agar lvl mein level_counts:
+        level_counts[lvl] = level_counts[lvl] + 1
+    warna:
+        level_counts[lvl] = 1
+
+    agar lvl == "ERROR":
+        error_services.append(entry.service)
+
+daawa level_counts["INFO"] == 3
+daawa level_counts["WARN"] == 2
+daawa level_counts["ERROR"] == 2
+daawa "database_pool" mein error_services
+daawa "payment_gw" mein error_services
+dikhao("=== Log Analysis Report ===")
+dikhao(f"Total Log Records: {lambai(entries)}")
+har lvl, count mein level_counts.items():
+    dikhao(f"  * {lvl}: {count}")
+dikhao(f"Critical Services Requiring Attention: {error_services}")
+dikhao("log_analyzer.hin: SUCCESS")

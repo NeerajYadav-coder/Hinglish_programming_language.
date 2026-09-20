@@ -1,0 +1,50 @@
+# Validation 02_data_processing: json_analytics.hin
+# Realistic data aggregation, dictionary transformation, and metrics pipeline
+laao json
+raw_orders_json = """[
+    {"order_id": "ORD-101", "customer": "Aarav", "category": "Electronics", "amount": 14999.0, "status": "completed"},
+    {"order_id": "ORD-102", "customer": "Priya", "category": "Clothing", "amount": 2499.0, "status": "completed"},
+    {"order_id": "ORD-103", "customer": "Rohan", "category": "Electronics", "amount": 49999.0, "status": "refunded"},
+    {"order_id": "ORD-104", "customer": "Sneha", "category": "Books", "amount": 899.0, "status": "completed"},
+    {"order_id": "ORD-105", "customer": "Vikram", "category": "Electronics", "amount": 8499.0, "status": "completed"},
+    {"order_id": "ORD-106", "customer": "Ananya", "category": "Clothing", "amount": 4200.0, "status": "cancelled"}
+]"""
+
+orders = json.loads(raw_orders_json)
+
+# 1. Filter completed orders using list comprehension
+completed = [o har o mein orders agar o["status"] == "completed"]
+daawa lambai(completed) == 4
+# 2. Compute category revenues and item counts
+category_stats = {}
+har order mein completed:
+    cat = order["category"]
+    amt = order["amount"]
+    agar cat mein category_stats:
+        curr = category_stats[cat]
+        category_stats[cat] = {"count": curr["count"] + 1, "total_revenue": curr["total_revenue"] + amt}
+    warna:
+        category_stats[cat] = {"count": 1, "total_revenue": amt}
+
+# 3. Aggregate totals
+total_completed_revenue = kul_jod([c["total_revenue"] har c mein category_stats.values()])
+daawa total_completed_revenue == 14999.0 + 2499.0 + 899.0 + 8499.0
+# 4. Find highest spending customer among completed
+highest_spender = ""
+max_spend = 0.0
+har o mein completed:
+    agar o["amount"] > max_spend:
+        max_spend = o["amount"]
+        highest_spender = o["customer"]
+
+daawa highest_spender == "Aarav"
+daawa max_spend == 14999.0
+dikhao("=== E-Commerce Analytics Summary ===")
+dikhao(f"Total Completed Orders:  {lambai(completed)}")
+dikhao(f"Total Gross Revenue:     INR {total_completed_revenue:,.2f}")
+dikhao(f"Top Completed Spender:   {highest_spender} (INR {max_spend:,.2f})")
+dikhao("Category Breakdown:")
+har cat, stats mein category_stats.items():
+    dikhao(f"  * {cat}: {stats['count']} orders, INR {stats['total_revenue']:,.2f}")
+
+dikhao("json_analytics.hin: SUCCESS")

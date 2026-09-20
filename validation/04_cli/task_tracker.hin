@@ -1,0 +1,82 @@
+# Validation 04_cli: task_tracker.hin
+# Command-line style utility simulating argument routing, dispatch, and stateful tasks
+varg TaskTracker:
+    kaam __init__(self):
+        self.tasks = []
+        self._next_id = 1
+
+    kaam add(self, title: str, priority: str = "normal") -> int:
+        task_id = self._next_id
+        self._next_id = self._next_id + 1
+        self.tasks.append({"id": task_id, "title": title, "priority": priority, "completed": galat})
+        wapas task_id
+
+    kaam complete(self, task_id: int) -> bool:
+        har t mein self.tasks:
+            agar t["id"] == task_id:
+                t["completed"] = sahi
+                wapas sahi
+        wapas galat
+
+    kaam list_tasks(self, filter_status: str = "all") -> list:
+        agar filter_status == "completed":
+            wapas [t har t mein self.tasks agar t["completed"]]
+        warna_agar filter_status == "pending":
+            wapas [t har t mein self.tasks agar nahi t["completed"]]
+
+        wapas self.tasks
+
+    kaam stats(self) -> dict:
+        total = lambai(self.tasks)
+        completed_count = lambai([t har t mein self.tasks agar t["completed"]])
+        pending_count = total - completed_count
+        wapas {"total": total, "completed": completed_count, "pending": pending_count}
+
+
+kaam dispatch_cli(tracker: TaskTracker, args: list) -> str:
+    agar lambai(args) == 0:
+        wapas "Command missing: use 'add', 'complete', 'list', or 'stats'"
+
+    cmd = args[0]
+    milao cmd:
+        vichaar "add":
+            agar lambai(args) < 2:
+                uthav ValueError("Task title required for 'add'")
+            title = args[1]
+            prio = "normal"
+            agar lambai(args) > 2:
+                prio = args[2]
+            tid = tracker.add(title, prio)
+            wapas f"Task {tid} created successfully"
+        vichaar "complete":
+            agar lambai(args) < 2:
+                uthav ValueError("Task ID required for 'complete'")
+            tid = purnank(args[1])
+            success = tracker.complete(tid)
+            agar success:
+                wapas f"Task {tid} completed"
+            wapas f"Task {tid} not found"
+        vichaar "stats":
+            s = tracker.stats()
+            wapas f"Total: {s['total']}, Completed: {s['completed']}, Pending: {s['pending']}"
+        vichaar _:
+            wapas f"Unknown command: '{cmd}'"
+
+
+# Test CLI dispatch flows
+tracker = TaskTracker()
+out1 = dispatch_cli(tracker, ["add", "Write Hinglish validation docs", "high"])
+out2 = dispatch_cli(tracker, ["add", "Review test coverage", "normal"])
+out3 = dispatch_cli(tracker, ["complete", "1"])
+out4 = dispatch_cli(tracker, ["stats"])
+
+daawa "Task 1 created" mein out1
+daawa "Task 2 created" mein out2
+daawa "Task 1 completed" mein out3
+daawa "Completed: 1, Pending: 1" mein out4
+dikhao("=== Task Tracker CLI Simulation ===")
+dikhao(out1)
+dikhao(out2)
+dikhao(out3)
+dikhao(out4)
+dikhao("task_tracker.hin: SUCCESS")

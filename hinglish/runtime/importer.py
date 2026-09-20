@@ -38,6 +38,13 @@ class HinglishSourceLoader(importlib.abc.SourceLoader):
         register_source(str(path), source, line_map)
         return compile(py_source, str(path), "exec")
 
+    def exec_module(self, module) -> None:
+        from .context import get_default_globals
+        for k, v in get_default_globals().items():
+            if not k.startswith("__") and k not in module.__dict__:
+                module.__dict__[k] = v
+        super().exec_module(module)
+
 
 class HinglishPathFinder(importlib.abc.MetaPathFinder):
     """MetaPathFinder that discovers .hin files on sys.path or package paths."""
