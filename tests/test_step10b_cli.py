@@ -123,6 +123,21 @@ class TestStep10bCLI(unittest.TestCase):
         self.assertEqual(res.returncode, 0)
         self.assertIn("Explicit dash stdin ok", res.stdout)
 
+    def test_stdin_flags(self) -> None:
+        """Verifies stdin piped with --tokens, --ast, and --transpile."""
+        code = 'x = 42\n'
+        res_tokens = self._run_cli(["--tokens"], input_data=code)
+        self.assertEqual(res_tokens.returncode, 0)
+        self.assertIn("IDENTIFIER", res_tokens.stdout)
+
+        res_ast = self._run_cli(["--ast"], input_data=code)
+        self.assertEqual(res_ast.returncode, 0)
+        self.assertIn("Assign", res_ast.stdout)
+
+        res_trans = self._run_cli(["--transpile"], input_data=code)
+        self.assertEqual(res_trans.returncode, 0)
+        self.assertIn("x = 42", res_trans.stdout)
+
     # -------------------------------------------------------------------------
     # 3. Exit Codes
     # -------------------------------------------------------------------------

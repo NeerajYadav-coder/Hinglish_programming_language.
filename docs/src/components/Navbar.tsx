@@ -53,7 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             Hinglish
           </span>
           <span className="apple-pill" style={{ fontSize: '0.72rem', padding: '0.15rem 0.55rem' }}>
-            v1.0.0
+            v1.1.0
           </span>
           <span
             className="apple-pill"

@@ -159,6 +159,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # 1. Determine resolved command and target file
     subcommands = {"run", "tokens", "ast", "transpile", "repl", "format", "lint"}
+    file_arg = None
     if raw_cmd in subcommands:
         command = raw_cmd
         file_arg = sub_file
@@ -186,6 +187,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         if raw_cmd and not (raw_cmd in subcommands):
             file_arg = raw_cmd
+
+    if not file_arg and not sys.stdin.isatty():
+        file_arg = "-"
 
     # 2. Handle REPL command
     if command == "repl":

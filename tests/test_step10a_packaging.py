@@ -14,8 +14,8 @@ class TestStep10aPackaging(unittest.TestCase):
     """Verifies package metadata, versioning, dependencies, and CLI entry point."""
 
     def test_version_accessibility(self) -> None:
-        """Verifies hinglish.__version__ is 1.0.0."""
-        self.assertEqual(hinglish.__version__, "1.0.0")
+        """Verifies hinglish.__version__ is 1.1.0."""
+        self.assertEqual(hinglish.__version__, "1.1.0")
         self.assertIsInstance(hinglish.__version__, str)
 
     def test_package_exports(self) -> None:
@@ -35,7 +35,7 @@ class TestStep10aPackaging(unittest.TestCase):
         content = pyproject_path.read_text(encoding="utf-8")
         self.assertIn("dependencies = []", content)
         self.assertIn('name = "hinglish"', content)
-        self.assertIn('version = "1.0.0"', content)
+        self.assertIn('version = "1.1.0"', content)
         self.assertIn('hinglish = "hinglish.cli:main"', content)
 
     def test_cli_version_flag_programmatically(self) -> None:
@@ -50,7 +50,7 @@ class TestStep10aPackaging(unittest.TestCase):
                 main(["--version"])
             self.assertEqual(ctx.exception.code, 0)
             output = stdout_buf.getvalue() or stderr_buf.getvalue()
-            self.assertIn("1.0.0", output)
+            self.assertIn("1.1.0", output)
         finally:
             sys.stdout = saved_stdout
             sys.stderr = saved_stderr
@@ -82,7 +82,7 @@ class TestStep10aPackaging(unittest.TestCase):
         )
         self.assertEqual(res.returncode, 0)
         output = res.stdout or res.stderr
-        self.assertIn("1.0.0", output)
+        self.assertIn("1.1.0", output)
 
     def test_python_module_invocation_file(self) -> None:
         """Verifies python3 -m hinglish <file.hin> execution."""

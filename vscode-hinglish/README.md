@@ -76,9 +76,9 @@ pip install -e .
 
 ### Install Extension in VS Code
 ```bash
-code --install-extension vscode-hinglish/hinglish-1.0.0.vsix
+code --install-extension vscode-hinglish/hinglish-1.1.0.vsix
 ```
 Or in VS Code:
 1. Open the Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X`).
 2. Click the `...` menu in the top-right.
-3. Select **Install from VSIX...** and choose `hinglish-1.0.0.vsix`.
+3. Select **Install from VSIX...** and choose `hinglish-1.1.0.vsix`.

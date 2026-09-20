@@ -101,13 +101,13 @@ class TestStep11aPackagingAndRobustness(unittest.TestCase):
         )
 
     def test_version_consistency_across_all_modules(self) -> None:
-        """Ensures version 1.0.0 is consistent across pyproject, package, vscode, and docs."""
+        """Ensures version 1.1.0 is consistent across pyproject, package, vscode, and docs."""
         with open(self.pyproject_path, "rb") as f:
             pyproject_ver = tomllib.load(f)["project"]["version"]
 
         pkg_ver = hinglish.__version__
-        self.assertEqual(pyproject_ver, "1.0.0")
-        self.assertEqual(pkg_ver, "1.0.0")
+        self.assertEqual(pyproject_ver, "1.1.0")
+        self.assertEqual(pkg_ver, "1.1.0")
 
         # VS Code extension package.json
         vscode_pkg = self.repo_root / "vscode-hinglish" / "package.json"
@@ -115,7 +115,7 @@ class TestStep11aPackagingAndRobustness(unittest.TestCase):
             import json
             with open(vscode_pkg, "r", encoding="utf-8") as f:
                 vscode_data = json.load(f)
-            self.assertEqual(vscode_data["version"], "1.0.0")
+            self.assertEqual(vscode_data["version"], "1.1.0")
 
         # Docs package.json
         docs_pkg = self.repo_root / "docs" / "package.json"
@@ -123,7 +123,7 @@ class TestStep11aPackagingAndRobustness(unittest.TestCase):
             import json
             with open(docs_pkg, "r", encoding="utf-8") as f:
                 docs_data = json.load(f)
-            self.assertEqual(docs_data["version"], "1.0.0")
+            self.assertEqual(docs_data["version"], "1.1.0")
 
     def test_cli_entrypoints_configured(self) -> None:
         """Verifies CLI entrypoints hinglish, hinglish-lsp, hinglish-dap are configured."""

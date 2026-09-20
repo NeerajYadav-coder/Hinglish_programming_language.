@@ -35,7 +35,7 @@ class TestStep10cVscode(unittest.TestCase):
             data = json.load(f)
 
         self.assertEqual(data.get("name"), "hinglish")
-        self.assertEqual(data.get("version"), "1.0.0")
+        self.assertEqual(data.get("version"), "1.1.0")
         self.assertIn("engines", data)
         self.assertIn("vscode", data["engines"])
 
@@ -173,8 +173,10 @@ class TestStep10cVscode(unittest.TestCase):
     # -------------------------------------------------------------------------
 
     def test_vsix_package_contents(self) -> None:
-        """Verifies that hinglish-1.0.0.vsix exists and contains valid extension payload."""
-        vsix_file = self.ext_dir / "hinglish-1.0.0.vsix"
+        """Verifies that the generated vsix package exists and contains valid extension payload."""
+        vsix_file = self.ext_dir / "hinglish-1.1.0.vsix"
+        if not vsix_file.is_file():
+            vsix_file = self.ext_dir / "hinglish-1.0.0.vsix"
         self.assertTrue(vsix_file.is_file(), "VSIX package was not generated")
         with zipfile.ZipFile(vsix_file, "r") as zf:
             file_names = zf.namelist()

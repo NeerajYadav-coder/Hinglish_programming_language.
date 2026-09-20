@@ -89,7 +89,7 @@ export const Footer: React.FC<FooterProps> = ({ currentRoute, navigate }) => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <span>Version 1.0.0</span>
+          <span>Version 1.1.0</span>
           <span>•</span>
           <span>Target: Python 3.10+</span>
           <span>•</span>

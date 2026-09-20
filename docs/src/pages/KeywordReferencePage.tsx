@@ -37,7 +37,7 @@ export const KeywordReferencePage: React.FC = () => {
         <span className="apple-pill" style={{ marginBottom: '0.75rem' }}>Keywords Reference</span>
         <h1 className="hero-title" style={{ fontSize: '2.6rem' }}>Keywords Ki List</h1>
         <p className="hero-subtitle">
-          Hinglish v1.0.0 ke sabhi 30+ keywords, operators, literals aur built-in functions ki searchable list.
+          Hinglish v1.1.0 ke sabhi 30+ keywords, operators, literals aur built-in functions ki searchable list.
         </p>
       </div>
 

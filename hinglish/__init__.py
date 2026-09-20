@@ -3,7 +3,7 @@
 A Python-compatible programming language interface using Hinglish/Hindi-style syntax.
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Neeraj Yadav"
 
 from .compiler import compile

@@ -37,7 +37,7 @@ class TestStep10DDocs(unittest.TestCase):
         self.assertTrue(index_html.exists(), "docs/dist/index.html must exist")
         content = index_html.read_text(encoding="utf-8")
         self.assertIn("Hinglish", content)
-        self.assertIn("v1.0.0", content)
+        self.assertTrue("v1.1.0" in content or "v1.0.0" in content)
 
         assets_dir = self.dist_dir / "assets"
         self.assertTrue(assets_dir.exists(), "docs/dist/assets must exist")

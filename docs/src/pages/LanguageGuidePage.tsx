@@ -10,7 +10,7 @@ export const LanguageGuidePage: React.FC = () => {
         <span className="apple-pill" style={{ marginBottom: '0.75rem' }}>Full Guide</span>
         <h1 className="hero-title" style={{ fontSize: '2.6rem' }}>Hinglish Language Guide</h1>
         <p className="hero-subtitle">
-          Hinglish v1.0.0 ke sabhi basic aur advanced features ko aasan shabdon mein samjhein.
+          Hinglish v1.1.0 ke sabhi basic aur advanced features ko aasan shabdon mein samjhein.
         </p>
       </div>
 
