@@ -23,7 +23,7 @@ export const VsCodePage: React.FC = () => {
 
         <div className="apple-card" style={{ background: 'var(--bg-secondary)', marginBottom: '2rem' }}>
           <CodeBlock
-            code={`# 1. Ensure hinglish installed in python\npip install .\n\n# 2. Install VS Code extension\ncode --install-extension vscode-hinglish/hinglish-1.0.0.vsix`}
+            code={`# 1. Ensure hinglish-lang installed in python\npip install hinglish-lang\n\n# 2. Install VS Code extension\ncode --install-extension vscode-hinglish/hinglish-1.1.0.vsix`}
             language="bash"
             filename="terminal"
           />

@@ -33,7 +33,7 @@ export const GettingStartedPage: React.FC = () => {
         </p>
 
         <CodeBlock
-          code={`# Folder se install karein\npip install .\n\n# Ya pre-built wheel file se install karein\npip install dist/hinglish-1.0.0-py3-none-any.whl`}
+          code={`# PyPI se direct install karein\npip install hinglish-lang\n\n# Ya folder se install karein\npip install .`}
           language="bash"
           filename="terminal"
         />
@@ -42,7 +42,7 @@ export const GettingStartedPage: React.FC = () => {
           Check karein ki install ho gaya ya nahi:
         </p>
         <CodeBlock
-          code={`hinglish --version\n# Output: Hinglish 1.0.0`}
+          code={`hinglish --version\n# Output: hinglish 1.1.0`}
           language="bash"
           filename="terminal"
         />

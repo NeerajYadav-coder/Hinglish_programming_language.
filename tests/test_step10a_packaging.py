@@ -34,7 +34,7 @@ class TestStep10aPackaging(unittest.TestCase):
         self.assertTrue(pyproject_path.is_file())
         content = pyproject_path.read_text(encoding="utf-8")
         self.assertIn("dependencies = []", content)
-        self.assertIn('name = "hinglish"', content)
+        self.assertIn('name = "hinglish-lang"', content)
         self.assertIn('version = "1.1.0"', content)
         self.assertIn('hinglish = "hinglish.cli:main"', content)
 

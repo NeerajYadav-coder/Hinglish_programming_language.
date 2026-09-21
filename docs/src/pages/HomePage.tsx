@@ -254,7 +254,7 @@ else:
           </p>
 
           <CodeBlock
-            code={`# Install karein\npip install .\n\n# Pehli file banayein aur run karein\necho 'dikhao("Namaste Duniya!")' > hello.hin\nhinglish hello.hin`}
+            code={`# Install karein\npip install hinglish-lang\n\n# Pehli file banayein aur run karein\necho 'dikhao("Namaste Duniya!")' > hello.hin\nhinglish hello.hin`}
             language="bash"
             filename="terminal"
           />

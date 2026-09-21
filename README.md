@@ -80,11 +80,11 @@ Hinglish Source Code (.hin)
 Install Hinglish directly using `pip`:
 
 ```bash
-# From local repository source
-pip install .
+# From PyPI
+pip install hinglish-lang
 
-# Or from pre-built wheel
-pip install dist/hinglish-1.1.0-py3-none-any.whl
+# Or from local repository source
+pip install .
 ```
 
 Requires **Python 3.10+** (tested on Python 3.10 through 3.14). Zero third-party runtime dependencies required!

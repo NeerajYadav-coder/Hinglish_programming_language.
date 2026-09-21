@@ -64,7 +64,7 @@ function activate(context) {
 
             client.start().catch((fallbackErr) => {
                 vscode.window.showWarningMessage(
-                    `Hinglish Language Server is not running (${fallbackErr.message}). Install Hinglish using "pip install ." to enable diagnostics and autocompletion.`
+                    `Hinglish Language Server is not running (${fallbackErr.message}). Install Hinglish using "pip install hinglish-lang" to enable diagnostics and autocompletion.`
                 );
             });
         });

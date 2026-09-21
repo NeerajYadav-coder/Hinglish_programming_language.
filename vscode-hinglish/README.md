@@ -69,7 +69,7 @@ To customize your debug session, create a `.vscode/launch.json` file in your wor
 ### Prerequisites
 Make sure Hinglish is installed in your Python environment:
 ```bash
-pip install hinglish
+pip install hinglish-lang
 # or install from source
 pip install -e .
 ```
