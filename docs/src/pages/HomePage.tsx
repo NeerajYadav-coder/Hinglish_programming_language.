@@ -38,22 +38,31 @@ else:
           </span>
         </div>
 
-        {/* Pehli Heading par seedha Sher (Normal Text) */}
+        {/* Pehli Heading par seedha Sher (Refined & Balanced) */}
         <div style={{ marginBottom: '1.75rem' }}>
           <p
             style={{
-              fontSize: '1.45rem',
-              fontWeight: 500,
-              lineHeight: 1.85,
-              color: 'var(--text-primary)',
-              maxWidth: '680px',
+              fontSize: '1.15rem',
+              fontWeight: 400,
+              lineHeight: 1.75,
+              color: 'var(--text-secondary)',
+              letterSpacing: '0.015em',
+              maxWidth: '580px',
               margin: '0 auto'
             }}
           >
             “हैं और भी दुनिया में सुख़न-वर बहुत अच्छे,<br />
             कहते हैं कि 'ग़ालिब' का है अंदाज़-ए-बयाँ और।”
           </p>
-          <span style={{ fontSize: '0.86rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.45rem' }}>
+          <span
+            style={{
+              fontSize: '0.8rem',
+              color: 'var(--text-muted)',
+              display: 'inline-block',
+              marginTop: '0.35rem',
+              letterSpacing: '0.02em'
+            }}
+          >
             — मिर्ज़ा असदुल्लाह ख़ाँ 'ग़ालिब'
           </span>
         </div>
