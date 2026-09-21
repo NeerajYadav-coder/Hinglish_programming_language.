@@ -60,9 +60,39 @@ export const CliPage: React.FC = () => {
                 <td>Interactive REPL shell shuru karta hai jahan aap live code type kar sakte hain.</td>
               </tr>
               <tr>
+                <td><code>hinglish format &lt;path&gt;</code></td>
+                <td><code>hinglish --format &lt;path&gt;</code></td>
+                <td>Source code ko canonical style mein format karta hai (single file ya recursive directory).</td>
+              </tr>
+              <tr>
+                <td><code>hinglish format &lt;path&gt; --check</code></td>
+                <td>—</td>
+                <td>Check karta hai ki code formatted hai ya nahi bina modify kiye (exit code 0/1).</td>
+              </tr>
+              <tr>
+                <td><code>hinglish lint &lt;path&gt;</code></td>
+                <td><code>hinglish --lint &lt;path&gt;</code></td>
+                <td>AST static analysis se unreferenced variables, syntax issues aur bugs detect karta hai.</td>
+              </tr>
+              <tr>
+                <td><code>hinglish lint &lt;path&gt; --check</code></td>
+                <td>—</td>
+                <td>CI/CD mode: agar koi warning ya error mile toh exit code 1 deta hai.</td>
+              </tr>
+              <tr>
+                <td><code>hinglish lsp</code></td>
+                <td>—</td>
+                <td>Language Server Protocol daemon start karta hai (VS Code editor integration).</td>
+              </tr>
+              <tr>
+                <td><code>hinglish dap</code></td>
+                <td>—</td>
+                <td>Debug Adapter Protocol server start karta hai (step-by-step interactive debugging).</td>
+              </tr>
+              <tr>
                 <td><code>hinglish --version</code></td>
                 <td><code>hinglish -v</code></td>
-                <td>Installed Hinglish package ka version (v1.0.0) check karne ke liye.</td>
+                <td>Installed Hinglish package ka version (v1.1.0) check karne ke liye.</td>
               </tr>
               <tr>
                 <td><code>hinglish --help</code></td>
@@ -72,6 +102,27 @@ export const CliPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+      </section>
+
+      {/* Recursive Directory Support (v1.1) */}
+      <section style={{ margin: '3rem 0' }}>
+        <h2 className="section-title">Recursive Directory Processing (v1.1)</h2>
+        <p style={{ color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.7 }}>
+          Hinglish v1.1 mein <code>format</code> aur <code>lint</code> commands folders ko recursively scan kar sakti hain. Aapko ek-ek file ka path dene ki zarurat nahi hai:
+        </p>
+
+        <CodeBlock
+          code={`# Poore source folder ko ek command mein format karein
+hinglish format src/ tests/
+
+# Poore project ko recursively lint karein
+hinglish lint .
+
+# CI/CD pipeline mein zero findings verify karein
+hinglish lint src/ --check`}
+          language="bash"
+          filename="terminal"
+        />
       </section>
 
       {/* Stdin Pipelines */}

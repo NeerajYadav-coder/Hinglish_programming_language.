@@ -118,6 +118,14 @@ export const App: React.FC = () => {
           setMobileMenuOpen={setMobileMenuOpen}
         />
 
+        {mobileMenuOpen && (
+          <div
+            className="sidebar-backdrop"
+            onClick={() => setMobileMenuOpen(false)}
+            aria-label="Close menu"
+          />
+        )}
+
         <main className="content-area">
           {renderPage()}
           <Footer currentRoute={route} navigate={navigate} />

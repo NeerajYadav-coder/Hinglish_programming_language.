@@ -24,14 +24,18 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => inputRef.current?.focus(), 50);
+      setSelectedIndex(0);
     } else {
       setQuery('');
       setResults([]);
+      setSelectedIndex(0);
     }
   }, [isOpen]);
 
@@ -41,9 +45,6 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         if (isOpen) onClose();
-        else {
-          // Open triggered by parent
-        }
       }
       if (e.key === 'Escape' && isOpen) {
         onClose();
@@ -57,6 +58,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setSelectedIndex(0);
       return;
     }
 
@@ -117,7 +119,27 @@ export const SearchModal: React.FC<SearchModalProps> = ({
     }
 
     setResults(res);
+    setSelectedIndex(0);
   }, [query]);
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (results.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % results.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const target = results[selectedIndex] || results[0];
+      if (target) {
+        navigate(target.route);
+        onClose();
+      }
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -130,9 +152,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             ref={inputRef}
             type="text"
             className="spotlight-input"
-            placeholder="Koi bhi keyword, topic ya example search karo (jaise agar, print, loop, varg)..."
+            placeholder="Search keywords, topics, guides, CLI (e.g. agar, varg, lambai, format)..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleInputKeyDown}
           />
           <button
             onClick={onClose}
@@ -142,12 +165,13 @@ export const SearchModal: React.FC<SearchModalProps> = ({
               cursor: 'pointer',
               color: 'var(--text-muted)'
             }}
+            aria-label="Close search"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="spotlight-results">
+        <div className="spotlight-results" ref={resultsContainerRef}>
           {query.trim() && results.length === 0 && (
             <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
               Koi result nahi mila "{query}" ke liye. Kuch aur try karein!
@@ -160,7 +184,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 Popular Searches:
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {['agar', 'kaam', 'varg', 'dikhao', 'asamanantar', 'milao', 'laao'].map((k) => (
+                {['agar', 'kaam', 'varg', 'dikhao', 'lambai', 'ginti', 'milao', 'laao', 'format'].map((k) => (
                   <button
                     key={k}
                     onClick={() => setQuery(k)}
@@ -177,14 +201,15 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           {results.map((r, i) => (
             <div
               key={i}
-              className="spotlight-item"
+              className={`spotlight-item ${selectedIndex === i ? 'active' : ''}`}
+              onMouseEnter={() => setSelectedIndex(i)}
               onClick={() => {
                 navigate(r.route);
                 onClose();
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ color: 'var(--accent-color)' }}>
+                <span style={{ color: selectedIndex === i ? 'var(--accent-color)' : 'var(--text-muted)' }}>
                   {r.type === 'keyword' && <Sparkles size={16} />}
                   {r.type === 'page' && <BookOpen size={16} />}
                   {r.type === 'example' && <Code size={16} />}
@@ -197,9 +222,30 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                 </div>
               </div>
 
-              <ArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
+              <ArrowRight size={14} style={{ color: selectedIndex === i ? 'var(--accent-color)' : 'var(--text-muted)' }} />
             </div>
           ))}
+        </div>
+
+        {/* Apple Spotlight Footer */}
+        <div
+          style={{
+            padding: '0.65rem 1.25rem',
+            borderTop: '1px solid var(--border-color)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
+            background: 'var(--bg-secondary)'
+          }}
+        >
+          <div style={{ display: 'flex', gap: '0.85rem', alignItems: 'center' }}>
+            <span><kbd style={{ padding: '0.1rem 0.35rem', background: 'var(--bg-tertiary)', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.72rem' }}>↑</kbd> <kbd style={{ padding: '0.1rem 0.35rem', background: 'var(--bg-tertiary)', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.72rem' }}>↓</kbd> navigate</span>
+            <span><kbd style={{ padding: '0.1rem 0.35rem', background: 'var(--bg-tertiary)', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.72rem' }}>↵</kbd> select</span>
+            <span><kbd style={{ padding: '0.1rem 0.35rem', background: 'var(--bg-tertiary)', borderRadius: '4px', border: '1px solid var(--border-color)', fontSize: '0.72rem' }}>esc</kbd> close</span>
+          </div>
+          <span>Hinglish v1.1.0 Spotlight</span>
         </div>
       </div>
     </div>

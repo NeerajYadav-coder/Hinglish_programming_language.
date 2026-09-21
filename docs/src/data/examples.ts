@@ -345,5 +345,81 @@ print("Natija:", calc.ganana(5, 4))
 `,
     output: `Natija: 30`,
     keyConcepts: ['varg', 'koshish', 'pakdo', 'wapas', 'shunya']
+  },
+  {
+    id: 'inline-conditionals',
+    title: '12. Inline Conditionals (v1.1 Feature)',
+    category: 'Control Flow',
+    description: 'Python ke ternary expression (val if cond else fallback) ka natural Hinglish roop: <expr> agar <shart> warna <fallback>.',
+    hinglishCode: `# Inline Conditional Expressions
+umar = 20
+status = "Adult" agar umar >= 18 warna "Minor"
+dikhao(f"Aapka status: {status}")
+
+# Functions mein clean early return
+kaam parinam(marks):
+    wapas "Distinction" agar marks >= 75 warna ("Pass" agar marks >= 40 warna "Fail")
+
+dikhao("Result 82:", parinam(82))
+dikhao("Result 35:", parinam(35))
+`,
+    pythonCode: `# Python Ternary Operator
+umar = 20
+status = "Adult" if umar >= 18 else "Minor"
+print(f"Aapka status: {status}")
+
+def parinam(marks):
+    return "Distinction" if marks >= 75 else ("Pass" if marks >= 40 else "Fail")
+
+print("Result 82:", parinam(82))
+print("Result 35:", parinam(35))
+`,
+    output: `Aapka status: Adult
+Result 82: Distinction
+Result 35: Fail`,
+    keyConcepts: ['agar ... warna ...', 'inline ternary', 'lazy evaluation', 'v1.1']
+  },
+  {
+    id: 'bilingual-builtins',
+    title: '13. Bilingual Built-in Aliases (v1.1 Feature)',
+    category: 'Builtins',
+    description: 'Hinglish v1.1 mein shamil kiye gaye bilingual built-ins: lambai, ginti, jod, sab, aur koi.',
+    hinglishCode: `# Hinglish v1.1 Bilingual Functions
+sankhyayein = [12, 18, 24, 6]
+
+# lambai (len) aur jod (sum)
+kul_lambai = lambai(sankhyayein)
+kul_yog = jod(sankhyayein)
+dikhao(f"Sankhya: {kul_lambai}, Total: {kul_yog}")
+
+# ginti (range) se loop
+har i mein ginti(1, 4):
+    dikhao(f"Step {i}")
+
+# sab (all) aur koi (any)
+shartein = [sahi, sahi, galat]
+dikhao("Kya sab sahi hain?", sab(shartein))
+dikhao("Kya koi bhi ek sahi hai?", koi(shartein))
+`,
+    pythonCode: `sankhyayein = [12, 18, 24, 6]
+
+kul_lambai = len(sankhyayein)
+kul_yog = sum(sankhyayein)
+print(f"Sankhya: {kul_lambai}, Total: {kul_yog}")
+
+for i in range(1, 4):
+    print(f"Step {i}")
+
+shartein = [True, True, False]
+print("Kya sab sahi hain?", all(shartein))
+print("Kya koi bhi ek sahi hai?", any(shartein))
+`,
+    output: `Sankhya: 4, Total: 60
+Step 1
+Step 2
+Step 3
+Kya sab sahi hain? False
+Kya koi bhi ek sahi hai? True`,
+    keyConcepts: ['lambai (len)', 'ginti (range)', 'jod (sum)', 'sab (all)', 'koi (any)']
   }
 ];

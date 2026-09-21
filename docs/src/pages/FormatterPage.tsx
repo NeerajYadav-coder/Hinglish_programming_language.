@@ -143,12 +143,23 @@ kaam greet(naam, umar=21):
           <CodeBlock language="bash" code="hinglish format source.hin -o formatted.hin" />
         </div>
 
-        <div className="apple-card">
+        <div className="apple-card" style={{ marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '0.75rem' }}>
             <Terminal size={18} />
             <span>4. Stdin / Pipe Support (-)</span>
           </div>
           <CodeBlock language="bash" code='cat program.hin | hinglish format -' />
+        </div>
+
+        <div className="apple-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: 600, marginBottom: '0.75rem' }}>
+            <Terminal size={18} />
+            <span>5. Recursive Directory Formatting (v1.1 Feature)</span>
+          </div>
+          <CodeBlock language="bash" code="hinglish format src/ tests/" />
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginTop: '0.5rem' }}>
+            Directory pass karne par Hinglish apne aap recursive walk karta hai aur saari <code>*.hin</code> files ko in-place safely format kar deta hai (non-code directories jaise <code>.git</code> aur <code>venv</code> ko skip karte hue).
+          </p>
         </div>
       </section>
 

@@ -110,7 +110,7 @@ warna:
         </p>
 
         <CodeBlock
-          code={`$ hinglish\nHinglish 1.0.0 Interactive REPL\nBahar aane ke liye "exit()" likhein ya Ctrl-D dabayein.\n\n>>> x = 10\n>>> agar x > 5:\n...     dikhao(f"Badi sankhya: {x}")\n...\nBadi sankhya: 10\n>>>`}
+          code={`$ hinglish\nHinglish 1.1.0 Interactive REPL\nBahar aane ke liye "exit()" likhein ya Ctrl-D dabayein.\n\n>>> x = 10\n>>> agar x > 5:\n...     dikhao(f"Badi sankhya: {x}")\n...\nBadi sankhya: 10\n>>>`}
           language="text"
           filename="interactive-shell"
         />

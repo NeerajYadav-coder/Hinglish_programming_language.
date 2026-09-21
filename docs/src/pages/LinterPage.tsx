@@ -233,6 +233,15 @@ hinglish lint --check app.hin`} />
             <CodeBlock language="bash" code={`# Stdin se code pipe karein
 cat script.hin | hinglish lint -`} />
           </div>
+
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>5. Recursive Directory Linting (v1.1 Feature)</div>
+            <CodeBlock language="bash" code={`# Poore project folder ko recursively inspect karein
+hinglish lint src/ tests/
+
+# Pure project root par lint check
+hinglish lint .`} />
+          </div>
         </div>
       </section>
 

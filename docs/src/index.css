@@ -112,15 +112,73 @@ code, pre, kbd {
   background: var(--bg-primary);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.apple-sidebar:hover {
+  scrollbar-color: var(--border-color) transparent;
 }
 
 .apple-sidebar::-webkit-scrollbar {
-  width: 5px;
+  width: 4px;
+}
+
+.apple-sidebar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .apple-sidebar::-webkit-scrollbar-thumb {
-  background: var(--border-color);
+  background: transparent;
   border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.apple-sidebar:hover::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+}
+
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  top: 64px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 95;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.sidebar-item-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.sidebar-item-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transform: translateX(2px);
+}
+
+.sidebar-item-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.sidebar-item-btn:active {
+  transform: scale(0.98);
 }
 
 /* Content Area - Full width, no empty right side gap */
@@ -214,13 +272,17 @@ code, pre, kbd {
   border-radius: 16px;
   padding: 1.75rem;
   box-shadow: var(--card-shadow);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 
 .apple-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--card-shadow-hover);
-  border-color: rgba(0, 113, 227, 0.2);
+  border-color: rgba(0, 113, 227, 0.25);
+}
+
+.dark .apple-card:hover {
+  border-color: rgba(41, 151, 255, 0.3);
 }
 
 .apple-pill {
@@ -234,6 +296,7 @@ code, pre, kbd {
   background: var(--accent-soft);
   color: var(--accent-color);
   border: 1px solid rgba(0, 113, 227, 0.15);
+  transition: all 0.18s ease;
 }
 
 .apple-button-primary {
@@ -250,13 +313,18 @@ code, pre, kbd {
   border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-shadow: 0 2px 8px rgba(0, 113, 227, 0.25);
 }
 
 .apple-button-primary:hover {
   background: var(--accent-hover);
-  transform: scale(1.02);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.35);
+}
+
+.apple-button-primary:active {
+  transform: scale(0.97);
 }
 
 .apple-button-secondary {
@@ -273,12 +341,17 @@ code, pre, kbd {
   border: 1px solid var(--border-color);
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .apple-button-secondary:hover {
   background: var(--bg-card-hover);
   border-color: var(--text-muted);
+  transform: translateY(-1px);
+}
+
+.apple-button-secondary:active {
+  transform: scale(0.97);
 }
 
 /* Apple macOS Terminal / Code Block */
@@ -418,11 +491,21 @@ code, pre, kbd {
   cursor: pointer;
   text-decoration: none;
   color: var(--text-primary);
-  transition: background 0.15s ease;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
 }
 
-.spotlight-item:hover, .spotlight-item.active {
+.spotlight-item:hover {
   background: var(--bg-tertiary);
+}
+
+.spotlight-item.active {
+  background: var(--accent-soft);
+  border-color: rgba(0, 113, 227, 0.25);
+}
+
+.dark .spotlight-item.active {
+  border-color: rgba(41, 151, 255, 0.35);
 }
 
 /* Animations */

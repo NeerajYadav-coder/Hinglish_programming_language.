@@ -416,6 +416,40 @@ export const KEYWORDS_DATA: KeywordInfo[] = [
     description: 'File ko padhne ya likhne ke liye open karta hai.',
     example: 'saath khol("log.txt", "r") jaise f:\n    dikhao(f.read())'
   },
+  {
+    token: 'ginti',
+    python: 'range',
+    category: 'Builtins',
+    meaning: 'Numbers ki series / sequence banana (range / kram)',
+    description: 'Loop chalane ke liye natural Hinglish sequence generator.',
+    aliases: ['kram'],
+    example: 'har i mein ginti(1, 5):\n    dikhao(f"Count: {i}")'
+  },
+  {
+    token: 'jod',
+    python: 'sum',
+    category: 'Builtins',
+    meaning: 'Numbers ka jod / addition nikalna (sum / kul_jod)',
+    description: 'List ya sequence ke sabhi items ko aapas mein jodta hai.',
+    aliases: ['kul_jod'],
+    example: 'numbers = [10, 20, 30]\ndikhao(jod(numbers)) # Output: 60'
+  },
+  {
+    token: 'sab',
+    python: 'all',
+    category: 'Builtins',
+    meaning: 'Check karna ki kya sabhi elements True hain (all)',
+    description: 'Agar collection ke sabhi items True hain toh True deta hai.',
+    example: 'dikhao(sab([sahi, sahi])) # Output: True'
+  },
+  {
+    token: 'koi',
+    python: 'any',
+    category: 'Builtins',
+    meaning: 'Check karna ki kya koi bhi ek element True hai (any)',
+    description: 'Agar collection ka kam se kam ek item True ho toh True deta hai.',
+    example: 'dikhao(koi([galat, sahi])) # Output: True'
+  },
 
   // Aliases (Bolchal ke aasan shabda)
   {

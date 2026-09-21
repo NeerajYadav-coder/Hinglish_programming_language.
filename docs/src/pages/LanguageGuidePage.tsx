@@ -94,6 +94,30 @@ khali = shunya      # Python None (kuch_nahi bhi chalega)`}
             language="hin"
           />
 
+          <h3 className="subsection-title">Bilingual Built-in Aliases (v1.1)</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+            Hinglish v1.1 mein natural Hindi aur English dono built-in functions seamlessly chalte hain:
+          </p>
+          <CodeBlock
+            code={`ank = [10, 20, 30, 40]
+
+# lambai ya len
+dikhao(lambai(ank))         # Output: 4
+dikhao(len(ank))            # Output: 4
+
+# ginti ya range / kram
+har i mein ginti(1, 4):     # 1, 2, 3
+    dikhao("Ginti step:", i)
+
+# jod ya sum / kul_jod
+dikhao("Total sum:", jod(ank)) # Output: 100
+
+# sab (all) aur koi (any)
+dikhao(sab([sahi, sahi]))   # True
+dikhao(koi([galat, sahi]))  # True`}
+            language="hin"
+          />
+
           <h3 className="subsection-title">Comments</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
             Comments likhne ke liye <code>#</code> ka use karein:
@@ -111,7 +135,7 @@ x = 100 # Yeh aage ka comment hai`}
         <div>
           <h2 className="section-title">2. Conditions aur Loops</h2>
           <p className="section-subtitle">
-            agar, warna_agar, warna, jabtak, har ... mein, ruko, aur aage_bado.
+            agar, warna_agar, warna, inline ternary, jabtak, har ... mein, ruko, aur aage_bado.
           </p>
 
           <h3 className="subsection-title">If-Else (agar / warna_agar / warna)</h3>
@@ -126,6 +150,26 @@ warna_agar ank >= 60:
     dikhao("Grade: B")
 warna:
     dikhao("Grade: C / Pass")`}
+            language="hin"
+          />
+
+          <h3 className="subsection-title">Inline Conditional Expression (v1.1 Ternary Operator)</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+            Python ke ternary operator (<code>x if cond else y</code>) ka natural Hinglish roop: <code>&lt;expr&gt; agar &lt;shart&gt; warna &lt;fallback&gt;</code>. Concise assignment aur function returns ke liye best hai:
+          </p>
+          <CodeBlock
+            code={`# 1. Single-line variable assignment
+umar = 19
+status = "Adult" agar umar >= 18 warna "Minor"
+dikhao("User status:", status)
+
+# 2. Function returns
+kaam get_access(role):
+    wapas "Full Access" agar role == "admin" warna "Guest Access"
+
+# 3. Short-circuit / Lazy evaluation:
+# Agar shart sahi hai toh 'warna' wala expression execute hi nahi hoga
+safe = 100 agar sahi warna (1 / 0)  # Safe! ZeroDivisionError nahi aayega`}
             language="hin"
           />
 
@@ -151,15 +195,15 @@ shehar = ["Delhi", "Mumbai", "Bengaluru"]
 har sh mein shehar:
     dikhao("Shehar ka naam:", sh)
 
-# Range par loop
-har i mein kram(1, 4):
+# Range par loop (ginti ya kram)
+har i mein ginti(1, 4):
     dikhao(f"Step {i}")`}
             language="hin"
           />
 
           <h3 className="subsection-title">Loop Control (ruko aur aage_bado)</h3>
           <CodeBlock
-            code={`har n mein kram(1, 10):
+            code={`har n mein ginti(1, 10):
     agar n == 3:
         aage_bado # 3 ko skip karke agle par jao (continue)
     agar n == 8:
@@ -246,17 +290,29 @@ point = (10, 20)`}
             language="hin"
           />
 
-          <h3 className="subsection-title">List Comprehensions</h3>
+          <h3 className="subsection-title">List & Dict Comprehensions</h3>
           <CodeBlock
             code={`# Ek line mein list filter aur square karna
-sam_varg = [x * x har x mein kram(1, 10) agar x % 2 == 0]
+sam_varg = [x * x har x mein ginti(1, 10) agar x % 2 == 0]
 dikhao("Even squares:", sam_varg)
 
 # Dictionary comprehension
-squares_map = {x: x * x har x mein kram(1, 5)}
+squares_map = {x: x * x har x mein ginti(1, 5)}
 dikhao("Map:", squares_map)`}
             language="hin"
           />
+
+          <div className="apple-callout" style={{ marginTop: '1.25rem' }}>
+            <div>
+              <strong>Pro-Tip (Comprehension Syntax in Hinglish):</strong> Hinglish comprehensions mein Python ke <code>for ... in</code> ki jagah <strong><code>har ... mein</code></strong> use hota hai:
+              <br />
+              <code>[x * 2 har x mein ginti(5)]</code>
+              <br />
+              <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                Agar aap aadat ke chalte Python-style <code>for ... in</code> likh dete hain, toh Hinglish v1.1 ka parser aur linter turant helpful diagnostic hint deta hai: <em>"Hinglish mein 'har &lt;var&gt; mein &lt;iter&gt;' likhein"</em>.
+              </span>
+            </div>
+          </div>
         </div>
       )}
 

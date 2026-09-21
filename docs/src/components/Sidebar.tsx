@@ -29,7 +29,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { id: '/', title: 'Home', titleHi: 'Home Page', iconName: 'Home' },
       { id: '/getting-started', title: 'Getting Started', titleHi: 'Shuru Kaise Karein', iconName: 'Rocket' },
-      { id: '/examples', title: 'Examples', titleHi: 'Code Examples', iconName: 'Code', badge: '11 Demo' },
+      { id: '/examples', title: 'Examples', titleHi: 'Code Examples', iconName: 'Code', badge: '13 Demo' },
     ]
   },
   {
@@ -120,23 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     navigate(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0.55rem 0.75rem',
-                    borderRadius: '8px',
-                    border: 'none',
-                    background: isActive ? 'var(--accent-soft)' : 'transparent',
-                    color: isActive ? 'var(--accent-color)' : 'var(--text-primary)',
-                    fontWeight: isActive ? 600 : 400,
-                    fontSize: '0.88rem',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    transition: 'all 0.15s ease',
-                    width: '100%'
-                  }}
-                  className="sidebar-item-btn"
+                  className={`sidebar-item-btn ${isActive ? 'active' : ''}`}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                     <span style={{ color: isActive ? 'var(--accent-color)' : 'var(--text-muted)' }}>
