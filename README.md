@@ -5,11 +5,11 @@
 *Created by **NJ 5.0***
 
 [![PyPI version](https://img.shields.io/pypi/v/hinglish-lang.svg)](https://pypi.org/project/hinglish-lang/)
-[![Documentation](https://img.shields.io/badge/docs-live%20website-0071e3.svg)](https://hinglish-programming-language.pages.dev)
+[![Documentation](https://img.shields.io/badge/docs-live%20website-0071e3.svg)](https://hinglish-programming-language.neerajbhaiya1508.workers.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 
-📖 **Official Documentation Website**: [https://hinglish-programming-language.pages.dev](https://hinglish-programming-language.pages.dev)
+📖 **Official Documentation Website**: [https://hinglish-programming-language.neerajbhaiya1508.workers.dev/](https://hinglish-programming-language.neerajbhaiya1508.workers.dev/)
 
 ---
 
@@ -245,7 +245,7 @@ Hinglish provides a complete developer ecosystem:
   - **Language Server Protocol (LSP)**: `hinglish-lsp` entrypoint providing hover documentation, real-time diagnostics, document symbols, and auto-completion.
   - **Debug Adapter Protocol (DAP)**: `hinglish-dap` entrypoint with breakpoints, variable inspection, call stack navigation, and step debugging.
   - **Document Formatter & Linter**: Integrated source formatting and static analysis directly within VS Code.
-- **Official Documentation Website**: [https://hinglish-programming-language.pages.dev](https://hinglish-programming-language.pages.dev)
+- **Official Documentation Website**: [https://hinglish-programming-language.neerajbhaiya1508.workers.dev/](https://hinglish-programming-language.neerajbhaiya1508.workers.dev/)
   - Full modern interactive Apple-style documentation, comprehensive language guide, comparison tables, 30+ keyword glossary, CLI reference, and real-world examples.
 
 
