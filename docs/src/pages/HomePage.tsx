@@ -34,18 +34,7 @@ else:
         <div style={{ display: 'inline-flex', gap: '0.6rem', marginBottom: '1.25rem', flexWrap: 'wrap', justifyContent: 'center' }}>
           <span className="apple-pill">
             <Sparkles size={13} />
-            <span>Hinglish v1.0.0 Ab Live Hai</span>
-          </span>
-          <span
-            className="apple-pill"
-            style={{
-              background: 'rgba(16, 185, 129, 0.1)',
-              color: '#10b981',
-              borderColor: 'rgba(16, 185, 129, 0.25)',
-              fontWeight: 600
-            }}
-          >
-            CreatedBYNJ5.0
+            <span>Hinglish v1.1.0 Ab Live Hai</span>
           </span>
         </div>
 

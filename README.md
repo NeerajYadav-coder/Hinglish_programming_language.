@@ -2,6 +2,8 @@
 
 > **Hinglish** is a Python-compatible programming language interface that uses familiar Hinglish (Hindi + English) keywords and syntax, targeting Python execution under the hood.
 
+*Created by **NJ 5.0***
+
 ---
 
 ## What is Hinglish?
@@ -11,6 +13,12 @@ Hinglish is an intuitive, approachable programming language interface designed f
 ---
 
 ## Why Hinglish?
+
+Hinglish began as a **curiosity-driven project**. It started with a simple spark of thought: *"Could a practical programming language actually be built around the natural cadence of everyday Hinglish without sacrificing Python's power?"* It was never conceived as a commercial product, a final career milestone, or a grand statement—the idea felt genuinely interesting, so it was simply explored and built.
+
+Looking back, it stands as one small step in an ongoing rhythm of **observation → curiosity → creation → learning**.
+
+Beyond that original spark of curiosity, Hinglish serves several concrete ergonomic and educational purposes:
 
 1. **Accessibility**: For millions of aspiring developers in India and South Asia, syntax barriers in English can add unnecessary cognitive friction when learning computational logic.
 2. **Cognitive Ease**: Reading `agar umar >= 18:` feels immediately intuitive and lowers the barrier to entry for beginners.

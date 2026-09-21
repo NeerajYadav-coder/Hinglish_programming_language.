@@ -13,6 +13,17 @@ export const PhilosophyPage: React.FC = () => {
       </div>
 
       <section style={{ margin: '2rem 0' }}>
+        <h2 className="section-title">Curiosity-Driven Exploration</h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.96rem', lineHeight: 1.8, marginBottom: '1rem' }}>
+          Hinglish kisi commercial product, final career milestone ya grand statement ke irade se shuru nahi hua tha. 
+          Dimag mein ek natural sawaal aaya: <em>"Kya hum sach mein ek aisi real programming language bana sakte hain jo natural Hinglish bole aur Python ke sath seamlessly chale?"</em>
+        </p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.96rem', lineHeight: 1.8, marginBottom: '1.25rem' }}>
+          Idea dilchasp laga, toh ise build karke dekha. Yeh project hamare ongoing journey — <strong>Observation → Curiosity → Creation → Learning</strong> — ka ek chhota sa natural kadam hai.
+        </p>
+      </section>
+
+      <section style={{ margin: '2rem 0' }}>
         <h2 className="section-title">Hinglish Ka Main Goal</h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.96rem', lineHeight: 1.8, marginBottom: '1.25rem' }}>
           Coding seekhte waqt logic aur problem solving sabse zaroori cheez hoti hai. 
