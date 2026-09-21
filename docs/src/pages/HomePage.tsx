@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Sparkles, Terminal, Cpu, FolderTree, FileCode2, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Sparkles, Terminal, Cpu, FolderTree, FileCode2, ShieldCheck, Quote } from 'lucide-react';
 import { CodeBlock } from '../components/CodeBlock';
 
 interface HomePageProps {
@@ -149,6 +149,66 @@ else:
             filename="program.py"
           />
         )}
+      </section>
+
+      {/* Mirza Ghalib Sher Quote Card in Devnagri */}
+      <section style={{ margin: '3.5rem auto 4.5rem', maxWidth: '780px', textAlign: 'center' }}>
+        <div
+          className="apple-card"
+          style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            padding: '2.5rem 2rem',
+            position: 'relative',
+            borderRadius: '20px',
+            boxShadow: 'var(--card-shadow)'
+          }}
+        >
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'var(--accent-soft)',
+              color: 'var(--accent-color)',
+              marginBottom: '1.25rem'
+            }}
+          >
+            <Quote size={20} />
+          </div>
+
+          <blockquote
+            style={{
+              fontSize: '1.42rem',
+              fontWeight: 500,
+              lineHeight: 1.95,
+              color: 'var(--text-primary)',
+              letterSpacing: '0.01em',
+              margin: '0 auto 1.25rem',
+              maxWidth: '640px'
+            }}
+          >
+            “हैं और भी दुनिया में सुख़न-वर बहुत अच्छे,<br />
+            कहते हैं कि 'ग़ालिब' का है अंदाज़-ए-बयाँ और।”
+          </blockquote>
+
+          <div
+            style={{
+              fontSize: '0.9rem',
+              color: 'var(--text-muted)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              fontWeight: 500
+            }}
+          >
+            <span>—</span>
+            <span style={{ color: 'var(--text-secondary)' }}>मिर्ज़ा असदुल्लाह ख़ाँ 'ग़ालिब'</span>
+          </div>
+        </div>
       </section>
 
       {/* Feature Cards in Simple Hindi */}
